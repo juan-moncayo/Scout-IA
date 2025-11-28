@@ -77,7 +77,7 @@ export async function runMigrations() {
     `)
     console.log('[MIGRATIONS] ✅ Table "ai_avatar_config" created')
 
-    // 5. Tabla de datos de onboarding (mantener por compatibilidad)
+    // 5. Tabla de datos de onboarding
     await db.execute(`
       CREATE TABLE IF NOT EXISTS agent_onboarding_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -164,25 +164,107 @@ export async function runMigrations() {
     `)
     console.log('[MIGRATIONS] ✅ Table "job_postings" created')
 
-    // 7. Tabla de candidatos
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS candidates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        job_posting_id INTEGER NOT NULL,
-        full_name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT,
-        resume_url TEXT,
-        cover_letter TEXT,
-        interview_score INTEGER,
-        interview_feedback TEXT,
-        status TEXT DEFAULT 'pending',
-        applied_at TEXT DEFAULT (datetime('now')),
-        CHECK (status IN ('pending', 'interviewed', 'accepted', 'rejected')),
-        FOREIGN KEY (job_posting_id) REFERENCES job_postings(id) ON DELETE CASCADE
-      )
+    // 7. 🔥 MIGRACIÓN INTELIGENTE DE CANDIDATES
+    console.log('[MIGRATIONS] 🔄 Checking candidates table...')
+    
+    // Verificar si la tabla existe
+    const tableExists = await db.execute(`
+      SELECT name FROM sqlite_master WHERE type='table' AND name='candidates'
     `)
-    console.log('[MIGRATIONS] ✅ Table "candidates" created')
+    
+    if (tableExists.rows.length > 0) {
+      console.log('[MIGRATIONS] ⚠️  Old candidates table found, migrating...')
+      
+      // Verificar si fit_score ya existe
+      const columnsResult = await db.execute(`PRAGMA table_info(candidates)`)
+      const columns = columnsResult.rows.map((row: any) => row.name)
+      
+      if (!columns.includes('fit_score')) {
+        console.log('[MIGRATIONS] 🔄 Adding fit_score column...')
+        await db.execute(`ALTER TABLE candidates ADD COLUMN fit_score INTEGER DEFAULT 0`)
+      }
+      
+      if (!columns.includes('ai_evaluation')) {
+        console.log('[MIGRATIONS] 🔄 Adding ai_evaluation column...')
+        await db.execute(`ALTER TABLE candidates ADD COLUMN ai_evaluation TEXT`)
+      }
+      
+      if (!columns.includes('evaluated_at')) {
+        console.log('[MIGRATIONS] 🔄 Adding evaluated_at column...')
+        await db.execute(`ALTER TABLE candidates ADD COLUMN evaluated_at TEXT`)
+      }
+      
+      if (!columns.includes('resume_text')) {
+        console.log('[MIGRATIONS] 🔄 Adding resume_text column...')
+        await db.execute(`ALTER TABLE candidates ADD COLUMN resume_text TEXT`)
+      }
+      
+      // Eliminar columnas viejas si existen (SQLite no soporta DROP COLUMN directamente)
+      // Tenemos que recrear la tabla
+      if (columns.includes('job_posting_id') || columns.includes('resume_url')) {
+        console.log('[MIGRATIONS] 🔄 Recreating candidates table with new schema...')
+        
+        // Crear tabla temporal
+        await db.execute(`
+          CREATE TABLE candidates_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT,
+            cv_file_path TEXT,
+            resume_text TEXT NOT NULL,
+            cover_letter TEXT,
+            ai_evaluation TEXT,
+            fit_score INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            applied_at TEXT DEFAULT (datetime('now')),
+            evaluated_at TEXT,
+            CHECK (status IN ('pending', 'approved', 'rejected')),
+            CHECK (fit_score BETWEEN 0 AND 100)
+          )
+        `)
+        
+        // Copiar datos existentes (si los hay)
+        await db.execute(`
+          INSERT INTO candidates_new (id, full_name, email, phone, cover_letter, status, applied_at)
+          SELECT id, full_name, email, phone, cover_letter, status, applied_at
+          FROM candidates
+          WHERE 1=1
+        `).catch(() => {
+          console.log('[MIGRATIONS] ℹ️  No data to migrate from old candidates table')
+        })
+        
+        // Eliminar tabla vieja y renombrar
+        await db.execute(`DROP TABLE candidates`)
+        await db.execute(`ALTER TABLE candidates_new RENAME TO candidates`)
+        
+        console.log('[MIGRATIONS] ✅ Candidates table recreated successfully')
+      } else {
+        console.log('[MIGRATIONS] ✅ Candidates table updated successfully')
+      }
+      
+    } else {
+      // Crear tabla nueva desde cero
+      console.log('[MIGRATIONS] 🔄 Creating new candidates table...')
+      await db.execute(`
+        CREATE TABLE candidates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          full_name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          phone TEXT,
+          resume_text TEXT NOT NULL,
+          cover_letter TEXT,
+          ai_evaluation TEXT,
+          fit_score INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'pending',
+          applied_at TEXT DEFAULT (datetime('now')),
+          evaluated_at TEXT,
+          CHECK (status IN ('pending', 'approved', 'rejected')),
+          CHECK (fit_score BETWEEN 0 AND 100)
+        )
+      `)
+      console.log('[MIGRATIONS] ✅ New candidates table created')
+    }
 
     // 8. Crear índices para mejor performance
     await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
@@ -191,8 +273,9 @@ export async function runMigrations() {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_voice_exam_user ON voice_exam_sessions(user_id)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_onboarding_user ON agent_onboarding_data(user_id)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_job_postings_active ON job_postings(is_active)')
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_job ON candidates(job_posting_id)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_status ON candidates(status)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_fit_score ON candidates(fit_score)')
     console.log('[MIGRATIONS] ✅ Indexes created')
 
     console.log('[MIGRATIONS] ✅ Talent Scout AI database ready!')

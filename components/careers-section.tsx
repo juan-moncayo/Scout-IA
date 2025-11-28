@@ -13,7 +13,8 @@ import {
   CheckCircle, 
   AlertCircle,
   Sparkles,
-  X
+  X,
+  TrendingUp
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -27,13 +28,17 @@ export function CareersSection() {
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [successData, setSuccessData] = useState<{
+    fitScore: number
+    bestMatch: string
+    matchPercentages: Record<string, number>
+  } | null>(null)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validar tipo de archivo
       const validTypes = [
         'application/pdf',
         'application/msword',
@@ -46,7 +51,6 @@ export function CareersSection() {
         return
       }
 
-      // Validar tamaño (máx 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('El archivo debe ser menor a 5MB')
         return
@@ -61,8 +65,8 @@ export function CareersSection() {
     e.preventDefault()
     setError('')
     setSuccess(false)
+    setSuccessData(null)
 
-    // Validaciones
     if (!formData.fullName || !formData.email || !cvFile) {
       setError('Por favor completa todos los campos obligatorios y sube tu CV')
       return
@@ -71,7 +75,6 @@ export function CareersSection() {
     setUploading(true)
 
     try {
-      // Crear FormData para enviar archivo
       const formDataToSend = new FormData()
       formDataToSend.append('full_name', formData.fullName)
       formDataToSend.append('email', formData.email)
@@ -88,6 +91,12 @@ export function CareersSection() {
 
       if (response.ok) {
         setSuccess(true)
+        setSuccessData({
+          fitScore: data.fit_score || 0,
+          bestMatch: data.best_match || 'Evaluando...',
+          matchPercentages: data.match_percentages || {}
+        })
+        
         // Limpiar formulario
         setFormData({
           fullName: '',
@@ -100,7 +109,6 @@ export function CareersSection() {
           fileInputRef.current.value = ''
         }
 
-        // Scroll suave hacia arriba para ver el mensaje
         window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
         setError(data.error || 'Error al enviar tu postulación. Intenta de nuevo.')
@@ -114,7 +122,6 @@ export function CareersSection() {
 
   return (
     <section className="relative py-24 bg-gradient-to-br from-black via-red-950 to-black overflow-hidden">
-      {/* Efectos de fondo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/5 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-grid-white/[0.02]" />
 
@@ -145,31 +152,97 @@ export function CareersSection() {
           </p>
         </motion.div>
 
-        {/* Success Message */}
+        {/* Success Message con Resultados */}
         <AnimatePresence>
-          {success && (
+          {success && successData && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="max-w-2xl mx-auto mb-8"
+              className="max-w-3xl mx-auto mb-8"
             >
-              <Card className="bg-green-500/10 border-green-500">
+              <Card className="bg-gradient-to-r from-green-900/40 to-blue-900/40 border-2 border-green-500">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-3">
-                    <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <h3 className="text-green-500 font-semibold text-lg mb-1">
-                        ¡Postulación Exitosa!
+                      <h3 className="text-green-400 font-bold text-xl mb-3">
+                        ¡Postulación Exitosa! 🎉
                       </h3>
-                      <p className="text-green-400 text-sm">
-                        Tu CV ha sido recibido y nuestra IA está analizándolo. 
-                        Recursos Humanos revisará tu perfil pronto. Te contactaremos por email.
-                      </p>
+                      
+                      <div className="space-y-4">
+                        {/* Fit Score */}
+                        <div className="bg-gray-900/60 rounded-lg p-4 border border-green-500/30">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-300 font-medium">Tu Puntuación General:</span>
+                            <span className={`text-3xl font-bold ${
+                              successData.fitScore >= 75 ? 'text-green-400' :
+                              successData.fitScore >= 60 ? 'text-yellow-400' :
+                              'text-orange-400'
+                            }`}>
+                              {successData.fitScore}/100
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Best Match */}
+                        {successData.bestMatch && successData.bestMatch !== 'Error' && (
+                          <div className="bg-blue-900/40 rounded-lg p-4 border border-blue-500/30">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <TrendingUp className="h-5 w-5 text-blue-400" />
+                              <span className="text-blue-400 font-semibold">Mejor Match:</span>
+                            </div>
+                            <p className="text-white text-lg font-bold">{successData.bestMatch}</p>
+                            {successData.matchPercentages[successData.bestMatch] && (
+                              <p className="text-blue-300 text-sm mt-1">
+                                {successData.matchPercentages[successData.bestMatch]}% de compatibilidad
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Match Percentages */}
+                        {Object.keys(successData.matchPercentages).length > 0 && (
+                          <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
+                            <p className="text-gray-300 font-semibold mb-3">Compatibilidad por Vacante:</p>
+                            <div className="space-y-2">
+                              {Object.entries(successData.matchPercentages)
+                                .sort(([, a], [, b]) => b - a)
+                                .map(([job, percentage]) => (
+                                  <div key={job} className="flex items-center justify-between">
+                                    <span className="text-gray-400 text-sm">{job}</span>
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-32 bg-gray-700 rounded-full h-2">
+                                        <div 
+                                          className={`h-2 rounded-full ${
+                                            percentage >= 75 ? 'bg-green-500' :
+                                            percentage >= 60 ? 'bg-yellow-500' :
+                                            'bg-orange-500'
+                                          }`}
+                                          style={{ width: `${percentage}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-white font-semibold text-sm w-12 text-right">
+                                        {percentage}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <p className="text-green-300 text-sm">
+                          ✅ Tu CV ha sido recibido y analizado. Recursos Humanos revisará tu perfil pronto y te contactaremos por email.
+                        </p>
+                      </div>
                     </div>
                     <button
-                      onClick={() => setSuccess(false)}
-                      className="text-green-500 hover:text-green-400"
+                      onClick={() => {
+                        setSuccess(false)
+                        setSuccessData(null)
+                      }}
+                      className="text-green-400 hover:text-green-300"
                     >
                       <X className="h-5 w-5" />
                     </button>
@@ -191,7 +264,6 @@ export function CareersSection() {
           <Card className="bg-gray-900 border-gray-800 shadow-2xl">
             <CardContent className="p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Error Message */}
                 {error && (
                   <div className="bg-red-500/10 border border-red-500 rounded-lg p-4 flex items-start space-x-3">
                     <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -199,7 +271,6 @@ export function CareersSection() {
                   </div>
                 )}
 
-                {/* Nombre Completo */}
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-gray-300">
                     Nombre Completo *
@@ -215,7 +286,6 @@ export function CareersSection() {
                   />
                 </div>
 
-                {/* Email y Teléfono */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">
@@ -247,7 +317,6 @@ export function CareersSection() {
                   </div>
                 </div>
 
-                {/* Upload CV */}
                 <div className="space-y-2">
                   <Label className="text-gray-300">
                     Curriculum Vitae (CV) *
@@ -312,7 +381,6 @@ export function CareersSection() {
                   </div>
                 </div>
 
-                {/* Carta de Presentación */}
                 <div className="space-y-2">
                   <Label htmlFor="coverLetter" className="text-gray-300">
                     Carta de Presentación (Opcional)
@@ -326,7 +394,6 @@ export function CareersSection() {
                   />
                 </div>
 
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   disabled={uploading}
@@ -368,7 +435,7 @@ export function CareersSection() {
             </div>
             <h3 className="text-white font-semibold mb-2">Evaluación con IA</h3>
             <p className="text-gray-400 text-sm">
-              Análisis automático de tu CV usando inteligencia artificial
+              Análisis automático de tu CV usando Claude Sonnet 4
             </p>
           </div>
 
@@ -384,11 +451,11 @@ export function CareersSection() {
 
           <div className="text-center">
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="h-8 w-8 text-red-500" />
+              <TrendingUp className="h-8 w-8 text-red-500" />
             </div>
             <h3 className="text-white font-semibold mb-2">Match Inteligente</h3>
             <p className="text-gray-400 text-sm">
-              Te conectamos con las vacantes más adecuadas para ti
+              Te mostramos tu % de compatibilidad con cada vacante
             </p>
           </div>
         </motion.div>

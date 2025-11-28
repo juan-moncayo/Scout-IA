@@ -5,14 +5,14 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { candidateId: string } }
+  { params }: { params: Promise<{ candidateId: string }> }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'No authorization token provided' },
+        { error: 'No authorization token' },
         { status: 401 }
       )
     }
@@ -21,10 +21,7 @@ export async function POST(
     const payload = verifyToken(token)
 
     if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     // Verificar que sea admin
@@ -40,7 +37,9 @@ export async function POST(
       )
     }
 
-    const candidateId = parseInt(params.candidateId)
+    // ⭐ AWAIT params antes de usar
+    const { candidateId: candidateIdStr } = await params
+    const candidateId = parseInt(candidateIdStr)
 
     // Obtener datos del candidato
     const candidateResult = await query(
@@ -57,10 +56,9 @@ export async function POST(
 
     const candidate = candidateResult.rows[0]
 
-    // Verificar que no esté ya aprobado
-    if (candidate.status === 'approved') {
+    if (candidate.status !== 'pending') {
       return NextResponse.json(
-        { error: 'Candidate already approved' },
+        { error: 'Candidate is not pending' },
         { status: 400 }
       )
     }
@@ -73,46 +71,40 @@ export async function POST(
 
     if (existingUser.rows.length > 0) {
       return NextResponse.json(
-        { error: 'Email already in use by another user' },
+        { error: 'Email already in use' },
         { status: 409 }
       )
     }
 
     // Generar contraseña temporal
-    const tempPassword = `Scout${Math.random().toString(36).slice(-8)}`
+    const tempPassword = `Scout${Math.random().toString(36).substring(2, 10)}`
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
     // Crear usuario
     await query(
-      `INSERT INTO users (
-        email,
-        password,
-        full_name,
-        role,
-        onboarding_completed
-      ) VALUES (?, ?, ?, 'agent', 1)`,
+      `INSERT INTO users (email, password, full_name, role, onboarding_completed, is_active)
+       VALUES (?, ?, ?, 'agent', 1, 1)`,
       [candidate.email, hashedPassword, candidate.full_name]
     )
 
     // Actualizar estado del candidato
     await query(
-      "UPDATE candidates SET status = 'approved' WHERE id = ?",
+      `UPDATE candidates SET status = 'approved' WHERE id = ?`,
       [candidateId]
     )
 
-    // TODO: Enviar email con credenciales al candidato
-    console.log(`[APPROVE] Temporary password for ${candidate.email}: ${tempPassword}`)
+    console.log('[APPROVE] Usuario creado:', candidate.email)
 
     return NextResponse.json({
       success: true,
       message: 'Candidate approved and user created',
-      tempPassword // En producción, NO devolver esto, solo enviarlo por email
+      tempPassword
     })
 
-  } catch (error) {
-    console.error('[APPROVE] Error approving candidate:', error)
+  } catch (error: any) {
+    console.error('[APPROVE] Error:', error)
     return NextResponse.json(
-      { error: 'Failed to approve candidate' },
+      { error: error.message || 'Failed to approve candidate' },
       { status: 500 }
     )
   }

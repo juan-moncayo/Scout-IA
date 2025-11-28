@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-export async function POST(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ candidateId: string }> }
 ) {
@@ -23,47 +23,34 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Verificar que sea admin
-    const userResult = await query(
-      'SELECT role FROM users WHERE id = ?',
-      [payload.userId]
-    )
-
+    // Verificar admin
+    const userResult = await query('SELECT role FROM users WHERE id = ?', [payload.userId])
     if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // ⭐ AWAIT params antes de usar
     const { candidateId: candidateIdStr } = await params
     const candidateId = parseInt(candidateIdStr)
 
-    // Actualizar estado del candidato
-    const result = await query(
-      `UPDATE candidates SET status = 'rejected' WHERE id = ?`,
-      [candidateId]
-    )
+    // Eliminar candidato
+    const result = await query('DELETE FROM candidates WHERE id = ?', [candidateId])
 
     if (result.rowCount === 0) {
-      return NextResponse.json(
-        { error: 'Candidate not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
     }
 
-    console.log('[REJECT] Candidato rechazado:', candidateId)
+    console.log('[DELETE] Candidate deleted:', candidateId)
 
     return NextResponse.json({
       success: true,
-      message: 'Candidate rejected'
+      message: 'Candidate deleted successfully'
     })
 
   } catch (error: any) {
-    console.error('[REJECT] Error:', error)
+    console.error('[DELETE] Error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to reject candidate' },
+      { error: error.message || 'Failed to delete candidate' },
       { status: 500 }
     )
   }

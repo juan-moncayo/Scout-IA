@@ -54,8 +54,7 @@ export async function chatWithClaude(options: ChatOptions): Promise<string> {
   }
 }
 
-// ... código existente ...
-
+// Evaluar CV con texto plano (para re-evaluación)
 export async function evaluateCVText(
   resumeText: string,
   candidateName: string,
@@ -110,25 +109,44 @@ ${resumeText}
 
 ${coverLetter ? `✍️ CARTA:\n${coverLetter}\n` : ''}
 
-RESPONDE EN ESTE FORMATO:
+RESPONDE EN ESTE FORMATO EXACTO:
 
 FIT_SCORE: [0-100]
-BEST_MATCH: [Título vacante]
+
+BEST_MATCH: [Título exacto de la vacante]
+
 MATCH_PERCENTAGES:
-${jobPostings.map((job: any) => `- ${job.title}: [%]`).join('\n')}
+${jobPostings.map((job: any) => `- ${job.title}: [porcentaje]`).join('\n')}
 
 EVALUACIÓN DETALLADA:
-🎯 RESUMEN: [2-3 líneas]
-💪 FORTALEZAS: [3 bullets con evidencia]
-⚠️ GAPS: [2 bullets]
-📊 ANÁLISIS: [Por cada vacante: match % y por qué]
-🔑 RECOMENDACIÓN: [Aprobar/rechazar, para qué vacante]`
+
+🎯 RESUMEN EJECUTIVO
+[2-3 oraciones sobre el candidato]
+
+💪 FORTALEZAS
+- [Fortaleza 1 con evidencia del CV]
+- [Fortaleza 2 con evidencia del CV]
+- [Fortaleza 3 con evidencia del CV]
+
+⚠️ GAPS
+- [Gap 1]
+- [Gap 2]
+
+📊 ANÁLISIS POR VACANTE:
+${jobPostings.map((job: any) => `**${job.title}**: [X]% - [Justificación 2-3 líneas]`).join('\n')}
+
+🔑 RECOMENDACIÓN
+[¿Aprobar para entrevista? ¿Qué vacante? Justifica]`
+
+  console.log('[EVALUATE-CV] Enviando a Claude...')
 
   const response = await chatWithClaude({
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.3,
     maxTokens: 4000
   })
+
+  console.log('[EVALUATE-CV] Respuesta recibida')
 
   // Extraer datos
   const fitScoreMatch = response.match(/FIT_SCORE:\s*(\d+)/i)
@@ -152,6 +170,9 @@ EVALUACIÓN DETALLADA:
 
   const evaluationMatch = response.match(/EVALUACIÓN DETALLADA:([\s\S]+)/i)
   const evaluation = evaluationMatch ? evaluationMatch[1].trim() : response
+
+  console.log('[EVALUATE-CV] Fit Score:', fitScore)
+  console.log('[EVALUATE-CV] Best Match:', bestMatch)
 
   return {
     evaluation,

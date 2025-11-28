@@ -1,95 +1,52 @@
-"use client"
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Star, Quote } from "lucide-react"
-import { useLanguage } from "@/contexts/language-context"
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Star, Quote } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 export function TestimonialsSection() {
-  const { language } = useLanguage()
-  const [isVisible, setIsVisible] = useState(false)
-  const sectionRef = useRef<HTMLElement>(null)
+  const { language } = useLanguage();
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const translations = {
     en: {
       title: "What Our Customers Say",
       subtitle: "Real feedback from satisfied homeowners",
       testimonials: [
-        {
-          id: 1,
-          name: "Sarah Johnson",
-          location: "Dallas, TX",
-          rating: 5,
-          text: "Excellent work! The team was professional, punctual, and the quality exceeded our expectations. Our new roof looks amazing!",
-        },
-        {
-          id: 2,
-          name: "Mike Rodriguez",
-          location: "Fort Worth, TX",
-          rating: 5,
-          text: "Great experience from start to finish. They handled our insurance claim and completed the work quickly. Highly recommend!",
-        },
-        {
-          id: 3,
-          name: "Jennifer Smith",
-          location: "Plano, TX",
-          rating: 5,
-          text: "The solar installation was seamless. Our energy bills have dropped significantly. Professional team and great service!",
-        },
+        { id: 1, name: "Sarah Johnson", location: "Dallas, TX", rating: 5, text: "Excellent work! The team was professional, punctual, and the quality exceeded our expectations. Our new roof looks amazing!" },
+        { id: 2, name: "Mike Rodriguez", location: "Fort Worth, TX", rating: 5, text: "Great experience from start to finish. They handled our insurance claim and completed the work quickly. Highly recommend!" },
+        { id: 3, name: "Jennifer Smith", location: "Plano, TX", rating: 5, text: "The solar installation was seamless. Our energy bills have dropped significantly. Professional team and great service!" },
       ],
     },
     es: {
       title: "Lo Que Dicen Nuestros Clientes",
       subtitle: "Comentarios reales de propietarios satisfechos",
       testimonials: [
-        {
-          id: 1,
-          name: "Sarah Johnson",
-          location: "Dallas, TX",
-          rating: 5,
-          text: "¡Excelente trabajo! El equipo fue profesional, puntual, y la calidad superó nuestras expectativas. ¡Nuestro nuevo techo se ve increíble!",
-        },
-        {
-          id: 2,
-          name: "Mike Rodriguez",
-          location: "Fort Worth, TX",
-          rating: 5,
-          text: "Gran experiencia de principio a fin. Manejaron nuestro reclamo de seguro y completaron el trabajo rápidamente. ¡Altamente recomendado!",
-        },
-        {
-          id: 3,
-          name: "Jennifer Smith",
-          location: "Plano, TX",
-          rating: 5,
-          text: "La instalación solar fue perfecta. Nuestras facturas de energía han bajado significativamente. ¡Equipo profesional y gran servicio!",
-        },
+        { id: 1, name: "Sarah Johnson", location: "Dallas, TX", rating: 5, text: "¡Excelente trabajo! El equipo fue profesional, puntual, y la calidad superó nuestras expectativas. ¡Nuestro nuevo techo se ve increíble!" },
+        { id: 2, name: "Mike Rodriguez", location: "Fort Worth, TX", rating: 5, text: "Gran experiencia de principio a fin. Manejaron nuestro reclamo de seguro y completaron el trabajo rápidamente. ¡Altamente recomendado!" },
+        { id: 3, name: "Jennifer Smith", location: "Plano, TX", rating: 5, text: "La instalación solar fue perfecta. Nuestras facturas de energía han bajado significativamente. ¡Equipo profesional y gran servicio!" },
       ],
     },
-  }
+  };
 
-  // 🔥 Corrección: Fallback seguro para evitar errores
-  const t = translations[language] || translations.es
+  // 🔹 Fallback seguro
+  const t = translations[language] || translations.es;
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
-      },
-      { threshold: 0.1 },
-    )
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setIsVisible(true);
+    }, { threshold: 0.1 });
 
-    if (sectionRef.current) observer.observe(sectionRef.current)
-    return () => observer.disconnect()
-  }, [])
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
       id="testimonials"
       ref={sectionRef}
-      className={`py-20 bg-black text-white transition-opacity duration-1000 ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`py-20 bg-black text-white transition-opacity duration-1000 ${isVisible ? "opacity-100" : "opacity-0"}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
@@ -130,5 +87,5 @@ export function TestimonialsSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

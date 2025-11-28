@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CandidateModal } from "@/components/candidate-modal"
 import { 
   LogOut, 
   Briefcase, 
@@ -19,7 +20,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  X,
   Save,
   CheckCircle,
   Users,
@@ -27,12 +27,9 @@ import {
   DollarSign,
   MapPin,
   Calendar,
-  FileText,
   Mail,
   Phone,
-  Award,
-  UserCheck,
-  UserX
+  Sparkles
 } from "lucide-react"
 
 interface JobPosting {
@@ -60,6 +57,7 @@ interface Candidate {
   resume_text: string
   cover_letter: string
   ai_evaluation: string | null
+  fit_score: number
   status: 'pending' | 'approved' | 'rejected'
   applied_at: string
   evaluated_at: string | null
@@ -305,6 +303,9 @@ function HRDashboardContent() {
         fetchCandidates()
         setCreateSuccess(true)
         setTimeout(() => setCreateSuccess(false), 3000)
+        
+        // Mostrar contraseña temporal
+        alert(`✅ Usuario creado exitosamente!\n\nEmail: ${selectedCandidate?.email}\nContraseña temporal: ${data.tempPassword}\n\nNOTA: En producción, esto se enviaría por email.`)
       } else {
         setCreateError(data.error || 'Failed to approve candidate')
       }
@@ -390,7 +391,7 @@ function HRDashboardContent() {
           <Button
             variant={activeTab === 'postings' ? 'default' : 'outline'}
             onClick={() => setActiveTab('postings')}
-            className={activeTab === 'postings' ? 'bg-red-500 hover:bg-red-600 text-white font-semibold' : 'border-gray-700 text-white font-semibold'}
+            className={activeTab === 'postings' ? 'bg-red-500 hover:bg-red-600 text-white font-semibold' : 'border-gray-700 text-white font-semibold hover:bg-gray-800'}
           >
             <Briefcase className="h-4 w-4 mr-2" />
             Gestionar Vacantes
@@ -398,7 +399,7 @@ function HRDashboardContent() {
           <Button
             variant={activeTab === 'candidates' ? 'default' : 'outline'}
             onClick={() => setActiveTab('candidates')}
-            className={activeTab === 'candidates' ? 'bg-red-500 hover:bg-red-600 text-white font-semibold' : 'border-gray-700 text-white font-semibold'}
+            className={activeTab === 'candidates' ? 'bg-red-500 hover:bg-red-600 text-white font-semibold' : 'border-gray-700 text-white font-semibold hover:bg-gray-800'}
           >
             <Users className="h-4 w-4 mr-2" />
             Revisar Candidatos
@@ -613,7 +614,7 @@ function HRDashboardContent() {
                             interview_guidelines: ''
                           })
                         }}
-                        className="border-gray-700 text-white"
+                        className="border-gray-700 text-white hover:bg-gray-800"
                       >
                         Cancelar
                       </Button>
@@ -642,22 +643,22 @@ function HRDashboardContent() {
                     {jobPostings.map((posting) => (
                       <div
                         key={posting.id}
-                        className="flex items-start justify-between p-4 bg-gray-800 rounded-lg border border-gray-700"
+                        className="flex items-start justify-between p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
                       >
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
                             <h3 className="text-white font-semibold text-lg">{posting.title}</h3>
                             {posting.is_active ? (
-                              <span className="px-2 py-1 bg-green-500/10 text-green-500 text-xs rounded-full">
-                                Activa
+                              <span className="px-2 py-1 bg-green-500/10 text-green-500 text-xs rounded-full border border-green-500/30">
+                                ● Activa
                               </span>
                             ) : (
                               <span className="px-2 py-1 bg-gray-700 text-gray-400 text-xs rounded-full">
-                                Inactiva
+                                ○ Inactiva
                               </span>
                             )}
                             {posting.candidate_count && posting.candidate_count > 0 && (
-                              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-full">
+                              <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/30">
                                 {posting.candidate_count} candidato{posting.candidate_count !== 1 ? 's' : ''}
                               </span>
                             )}
@@ -683,7 +684,11 @@ function HRDashboardContent() {
                           </div>
 
                           <p className="text-xs text-gray-500 mt-2">
-                            Creada: {new Date(posting.created_at).toLocaleDateString()}
+                            Creada: {new Date(posting.created_at).toLocaleDateString('es-ES', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
                           </p>
                         </div>
 
@@ -737,21 +742,30 @@ function HRDashboardContent() {
                     {candidates.map((candidate) => (
                       <div
                         key={candidate.id}
-                        className="p-4 bg-gray-800 rounded-lg border border-gray-700"
+                        className="p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <h4 className="text-white font-medium text-lg">{candidate.full_name}</h4>
-                              <span className={`px-3 py-1 text-xs rounded-full ${
-                                candidate.status === 'approved' ? 'bg-green-500/10 text-green-500' :
-                                candidate.status === 'rejected' ? 'bg-red-500/10 text-red-500' :
-                                'bg-yellow-500/10 text-yellow-500'
+                              <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                                candidate.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/30' :
+                                candidate.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/30' :
+                                'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30'
                               }`}>
-                                {candidate.status === 'approved' ? 'Aprobado' :
-                                 candidate.status === 'rejected' ? 'Rechazado' :
-                                 'Pendiente'}
+                                {candidate.status === 'approved' ? '✅ Aprobado' :
+                                 candidate.status === 'rejected' ? '❌ Rechazado' :
+                                 '⏳ Pendiente'}
                               </span>
+                              {candidate.fit_score > 0 && (
+                                <span className={`px-3 py-1 text-xs rounded-full font-bold ${
+                                  candidate.fit_score >= 75 ? 'bg-green-500/20 text-green-400 border border-green-500' :
+                                  candidate.fit_score >= 60 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500' :
+                                  'bg-red-500/20 text-red-400 border border-red-500'
+                                }`}>
+                                  🎯 {candidate.fit_score}/100
+                                </span>
+                              )}
                             </div>
                             
                             <div className="space-y-1 text-sm text-gray-400">
@@ -767,17 +781,21 @@ function HRDashboardContent() {
                               )}
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-2" />
-                                Aplicó: {new Date(candidate.applied_at).toLocaleDateString()}
+                                Aplicó: {new Date(candidate.applied_at).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
                               </div>
                             </div>
 
                             {candidate.ai_evaluation && (
                               <div className="mt-3 p-3 bg-gray-900 rounded-lg border border-gray-700">
                                 <div className="flex items-center space-x-2 mb-2">
-                                  <Award className="h-4 w-4 text-blue-400" />
-                                  <p className="text-sm font-semibold text-blue-400">Evaluación IA</p>
+                                  <Sparkles className="h-4 w-4 text-blue-400" />
+                                  <p className="text-sm font-semibold text-blue-400">Vista Previa de Evaluación IA</p>
                                 </div>
-                                <p className="text-xs text-gray-300 line-clamp-3">{candidate.ai_evaluation}</p>
+                                <p className="text-xs text-gray-300 line-clamp-2">{candidate.ai_evaluation}</p>
                               </div>
                             )}
                           </div>
@@ -905,7 +923,7 @@ function HRDashboardContent() {
                 <Button
                   onClick={() => setShowEditModal(false)}
                   variant="outline"
-                  className="border-gray-700 text-white"
+                  className="border-gray-700 text-white hover:bg-gray-800"
                 >
                   Cancelar
                 </Button>
@@ -939,7 +957,7 @@ function HRDashboardContent() {
                 setDeletingPostingId(null)
               }}
               variant="outline"
-              className="border-gray-700 text-white"
+              className="border-gray-700 text-white hover:bg-gray-800"
             >
               Cancelar
             </Button>
@@ -947,116 +965,20 @@ function HRDashboardContent() {
         </DialogContent>
       </Dialog>
 
-      {/* View Candidate Modal */}
-      <Dialog open={showCandidateModal} onOpenChange={setShowCandidateModal}>
-        <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white text-2xl">Perfil del Candidato</DialogTitle>
-          </DialogHeader>
-
-          {selectedCandidate && (
-            <div className="space-y-6">
-              {createError && (
-                <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-500">{createError}</p>
-                </div>
-              )}
-
-              {/* Basic Info */}
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Información Personal</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-gray-400 text-sm">Nombre Completo</p>
-                    <p className="text-white">{selectedCandidate.full_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-400 text-sm">Email</p>
-                    <p className="text-white">{selectedCandidate.email}</p>
-                  </div>
-                  {selectedCandidate.phone && (
-                    <div>
-                      <p className="text-gray-400 text-sm">Teléfono</p>
-                      <p className="text-white">{selectedCandidate.phone}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-gray-400 text-sm">Fecha de Postulación</p>
-                    <p className="text-white">{new Date(selectedCandidate.applied_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Resume/CV */}
-              <div className="bg-gray-800 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">CV / Resumen</h3>
-                <div className="bg-gray-900 rounded p-4 max-h-64 overflow-y-auto">
-                  <p className="text-gray-300 text-sm whitespace-pre-wrap">{selectedCandidate.resume_text}</p>
-                </div>
-              </div>
-
-              {/* Cover Letter */}
-              {selectedCandidate.cover_letter && (
-                <div className="bg-gray-800 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">Carta de Presentación</h3>
-                  <div className="bg-gray-900 rounded p-4 max-h-48 overflow-y-auto">
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap">{selectedCandidate.cover_letter}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* AI Evaluation */}
-              {selectedCandidate.ai_evaluation && (
-                <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-6 border border-blue-500/30">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <Award className="h-6 w-6 text-blue-400" />
-                    <h3 className="text-lg font-semibold text-white">Evaluación Automática por IA</h3>
-                  </div>
-                  <div className="bg-gray-900/50 rounded p-4">
-                    <p className="text-gray-200 whitespace-pre-wrap">{selectedCandidate.ai_evaluation}</p>
-                  </div>
-                  {selectedCandidate.evaluated_at && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Evaluado: {new Date(selectedCandidate.evaluated_at).toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              {selectedCandidate.status === 'pending' && (
-                <div className="flex space-x-3">
-                  <Button
-                    onClick={() => handleApproveCandidate(selectedCandidate.id)}
-                    disabled={processingCandidate}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {processingCandidate ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <UserCheck className="h-4 w-4 mr-2" />
-                    )}
-                    Aprobar y Crear Usuario
-                  </Button>
-                  <Button
-                    onClick={() => handleRejectCandidate(selectedCandidate.id)}
-                    disabled={processingCandidate}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    {processingCandidate ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <UserX className="h-4 w-4 mr-2" />
-                    )}
-                    Rechazar
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Candidate Modal - COMPONENTE SEPARADO */}
+      <CandidateModal
+        candidate={selectedCandidate}
+        isOpen={showCandidateModal}
+        onClose={() => {
+          setShowCandidateModal(false)
+          setSelectedCandidate(null)
+          setCreateError('')
+        }}
+        onApprove={handleApproveCandidate}
+        onReject={handleRejectCandidate}
+        processing={processingCandidate}
+        error={createError}
+      />
     </div>
   )
 }

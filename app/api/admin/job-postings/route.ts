@@ -1,9 +1,7 @@
-// app/api/admin/job-postings/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 
-// GET - Obtener todas las vacantes
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -18,30 +16,43 @@ export async function GET(request: NextRequest) {
     const token = authHeader.substring(7)
     const payload = verifyToken(token)
 
-    if (!payload || payload.role !== 'admin') {
+    if (!payload) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Verificar que sea admin
+    const userResult = await query(
+      'SELECT role FROM users WHERE id = ?',
+      [payload.userId]
+    )
+
+    if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
         { status: 403 }
       )
     }
 
-    // Obtener todas las vacantes con conteo de candidatos
+    // ✅ QUERY CORREGIDA: Sin job_posting_id que no existe
     const result = await query(
       `SELECT 
         jp.id, 
         jp.title, 
         jp.department, 
         jp.location, 
-        jp.employment_type,
-        jp.salary_range,
-        jp.description,
-        jp.requirements,
-        jp.responsibilities,
+        jp.employment_type, 
+        jp.salary_range, 
+        jp.description, 
+        jp.requirements, 
+        jp.responsibilities, 
         jp.interview_guidelines,
-        jp.created_at,
-        jp.updated_at,
+        jp.created_at, 
+        jp.updated_at, 
         jp.is_active,
-        (SELECT COUNT(*) FROM candidates WHERE job_posting_id = jp.id) as candidate_count
+        (SELECT COUNT(*) FROM candidates) as candidate_count
        FROM job_postings jp
        ORDER BY jp.created_at DESC`
     )
@@ -59,7 +70,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Crear nueva vacante
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -74,9 +84,22 @@ export async function POST(request: NextRequest) {
     const token = authHeader.substring(7)
     const payload = verifyToken(token)
 
-    if (!payload || payload.role !== 'admin') {
+    if (!payload) {
       return NextResponse.json(
-        { error: 'Unauthorized. Admin access required.' },
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Verificar que sea admin
+    const userResult = await query(
+      'SELECT role FROM users WHERE id = ?',
+      [payload.userId]
+    )
+
+    if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
         { status: 403 }
       )
     }
@@ -94,7 +117,7 @@ export async function POST(request: NextRequest) {
       interview_guidelines
     } = body
 
-    // Validación
+    // Validaciones
     if (!title || !department || !location || !description || !requirements || !interview_guidelines) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -102,17 +125,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear la vacante
-    const result = await query(
+    // Crear job posting
+    await query(
       `INSERT INTO job_postings (
-        title, 
-        department, 
-        location, 
-        employment_type, 
-        salary_range, 
-        description, 
-        requirements, 
-        responsibilities, 
+        title,
+        department,
+        location,
+        employment_type,
+        salary_range,
+        description,
+        requirements,
+        responsibilities,
         interview_guidelines,
         is_active
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
@@ -128,8 +151,6 @@ export async function POST(request: NextRequest) {
         interview_guidelines
       ]
     )
-
-    console.log('[ADMIN] ✅ Job posting created:', title)
 
     return NextResponse.json({
       success: true,
