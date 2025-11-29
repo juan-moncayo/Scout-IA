@@ -130,7 +130,7 @@ function HRDashboardContent() {
   const [candidateStatusFilter, setCandidateStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [candidateSortBy, setCandidateSortBy] = useState<'score' | 'date'>('score')
 
-  // Estados para Candidatos Aprobados aprobados
+  // Estados para Candidatos Aprobados
   const [approvedAgents, setApprovedAgents] = useState<ApprovedAgent[]>([])
   const [loadingApprovedAgents, setLoadingApprovedAgents] = useState(false)
   const [agentSearch, setAgentSearch] = useState('')
@@ -402,10 +402,13 @@ function HRDashboardContent() {
 
   // 🔍 FILTROS Y ORDENAMIENTO con useMemo para performance
 
-  // Filtrar y ordenar candidatos
+  // Filtrar y ordenar candidatos (SOLO PENDIENTES Y RECHAZADOS, NO APROBADOS)
   const filteredAndSortedCandidates = useMemo(() => {
     return candidates
       .filter(candidate => {
+        // NO mostrar candidatos aprobados en esta pestaña
+        if (candidate.status === 'approved') return false
+        
         const matchesSearch = candidate.full_name.toLowerCase().includes(candidateSearch.toLowerCase()) ||
                              candidate.email.toLowerCase().includes(candidateSearch.toLowerCase())
         const matchesStatus = candidateStatusFilter === 'all' || candidate.status === candidateStatusFilter
@@ -515,28 +518,28 @@ function HRDashboardContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Navigation Tabs - RESPONSIVE */}
+        {/* Navigation Tabs - BOTONES BLANCOS */}
         <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 mb-6 sm:mb-8">
           <Button
-            variant={activeTab === 'candidates' ? 'default' : 'outline'}
+            variant="default"
             onClick={() => setActiveTab('candidates')}
-            className={`${activeTab === 'candidates' ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-700 text-white hover:bg-gray-800'} font-semibold justify-start sm:justify-center`}
+            className="bg-white text-black hover:bg-gray-100 font-semibold justify-start sm:justify-center"
           >
             <Users className="h-4 w-4 mr-2" />
             Candidatos
           </Button>
           <Button
-            variant={activeTab === 'postings' ? 'default' : 'outline'}
+            variant="default"
             onClick={() => setActiveTab('postings')}
-            className={`${activeTab === 'postings' ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-700 text-white hover:bg-gray-800'} font-semibold justify-start sm:justify-center`}
+            className="bg-white text-black hover:bg-gray-100 font-semibold justify-start sm:justify-center"
           >
             <Briefcase className="h-4 w-4 mr-2" />
             Vacantes
           </Button>
           <Button
-            variant={activeTab === 'approved-agents' ? 'default' : 'outline'}
+            variant="default"
             onClick={() => setActiveTab('approved-agents')}
-            className={`${activeTab === 'approved-agents' ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-700 text-white hover:bg-gray-800'} font-semibold justify-start sm:justify-center`}
+            className="bg-white text-black hover:bg-gray-100 font-semibold justify-start sm:justify-center"
           >
             <UserCheck className="h-4 w-4 mr-2" />
             Candidatos Aprobados
@@ -551,7 +554,7 @@ function HRDashboardContent() {
           </div>
         )}
 
-        {/* CANDIDATES TAB - CON FILTROS */}
+        {/* CANDIDATES TAB - SOLO MUESTRA PENDIENTES Y RECHAZADOS */}
         {activeTab === 'candidates' && (
           <div className="space-y-4 sm:space-y-6">
             {/* Filtros Card */}
@@ -579,7 +582,6 @@ function HRDashboardContent() {
                       >
                         <option value="all">📋 Todos los estados</option>
                         <option value="pending">⏳ Pendientes</option>
-                        <option value="approved">✅ Aprobados</option>
                         <option value="rejected">❌ Rechazados</option>
                       </select>
                     </div>
@@ -597,7 +599,7 @@ function HRDashboardContent() {
                   </div>
 
                   <div className="text-xs sm:text-sm text-gray-400">
-                    Mostrando {filteredAndSortedCandidates.length} de {candidates.length} candidatos
+                    Mostrando {filteredAndSortedCandidates.length} candidatos
                   </div>
                 </div>
               </CardContent>
@@ -637,13 +639,10 @@ function HRDashboardContent() {
                               <h4 className="text-white font-medium text-base sm:text-lg">{candidate.full_name}</h4>
                               
                               <span className={`px-2 py-1 text-xs rounded-full font-medium whitespace-nowrap ${
-                                candidate.status === 'approved' ? 'bg-green-500/10 text-green-500 border border-green-500/30' :
                                 candidate.status === 'rejected' ? 'bg-red-500/10 text-red-500 border border-red-500/30' :
                                 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/30'
                               }`}>
-                                {candidate.status === 'approved' ? '✅ Aprobado' :
-                                 candidate.status === 'rejected' ? '❌ Rechazado' :
-                                 '⏳ Pendiente'}
+                                {candidate.status === 'rejected' ? '❌ Rechazado' : '⏳ Pendiente'}
                               </span>
 
                               {candidate.fit_score > 0 && (
@@ -756,7 +755,7 @@ function HRDashboardContent() {
               </Button>
             )}
 
-            {/* Create Form - Mantener original pero responsive */}
+            {/* Create Form */}
             {showCreateForm && (
               <Card className="bg-gray-900 border-gray-800">
                 <CardHeader>
@@ -1048,7 +1047,7 @@ function HRDashboardContent() {
           </div>
         )}
 
-        {/* APPROVED AGENTS TAB - CON FILTROS */}
+        {/* APPROVED AGENTS TAB - SOLO CANDIDATOS APROBADOS */}
         {activeTab === 'approved-agents' && (
           <div className="space-y-4 sm:space-y-6">
             {/* Filtros para Candidatos Aprobados */}

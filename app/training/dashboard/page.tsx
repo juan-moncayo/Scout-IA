@@ -63,12 +63,12 @@ function DashboardContent() {
             <div className="flex items-center space-x-3">
               <Image
                 src="/logo.png"
-                alt="Talent Scout AI"
+                alt="Scout AI"
                 width={100}
                 height={63}
                 className="h-10 w-auto"
               />
-              <span className="text-white font-semibold text-xl">Talent Scout AI</span>
+              <span className="text-white font-semibold text-xl"> Scout AI</span>
             </div>
 
             <div className="flex items-center space-x-4">

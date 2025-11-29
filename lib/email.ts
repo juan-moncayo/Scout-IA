@@ -30,9 +30,9 @@ export interface WelcomeEmailData {
 export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
   try {
     const mailOptions = {
-      from: `"Talent Scout AI" <${process.env.EMAIL_USER}>`,
+      from: `"Scout AI" <${process.env.EMAIL_USER}>`,
       to: data.to,
-      subject: '🎉 ¡Bienvenido a Talent Scout AI! - Credenciales de Acceso',
+      subject: '🎉 ¡Bienvenido a Scout AI! - Credenciales de Acceso',
       html: `
         <!DOCTYPE html>
         <html>

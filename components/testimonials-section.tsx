@@ -16,7 +16,7 @@ export function TestimonialsSection() {
       testimonials: [
         { id: 1, name: "Scout IA", location: "Platform", rating: 5, text: "Successfully evaluated 500+ candidate profiles, improving matching accuracy by 35%." },
         { id: 2, name: "RecruitBot", location: "Platform", rating: 5, text: "Adaptive interview questions reduced average candidate time by 20%, streamlining the hiring process." },
-        { id: 3, name: "TalentScout AI", location: "Platform", rating: 5, text: "Automated CV classification achieved 92% precision in skill tagging across diverse industries." },
+        { id: 3, name: "Scout AI", location: "Platform", rating: 5, text: "Automated CV classification achieved 92% precision in skill tagging across diverse industries." },
       ],
     },
     es: {

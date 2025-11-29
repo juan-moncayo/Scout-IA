@@ -78,7 +78,7 @@ Fecha de Generación: ${new Date().toLocaleDateString('es-ES')}
 ${candidate.resume_text}
 
 ---
-Este documento fue generado automáticamente por Talent Scout AI
+Este documento fue generado automáticamente por Scout AI
     `.trim()
 
     const fileName = `CV_${candidate.full_name.replace(/\s+/g, '_')}.txt`

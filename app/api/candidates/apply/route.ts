@@ -103,10 +103,10 @@ ${job.interview_guidelines}
             },
             {
               type: 'text',
-              text: `Eres un experto reclutador senior de Talent Scout AI. Tu tarea es analizar el CV PDF adjunto y compararlo con TODAS las vacantes disponibles.
+              text: `Eres un experto reclutador senior de Scout AI. Tu tarea es analizar el CV PDF adjunto y compararlo con TODAS las vacantes disponibles.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 VACANTES DISPONIBLES EN TALENT SCOUT AI
+📊 VACANTES DISPONIBLES EN SCOUT AI
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${jobsContext}

@@ -65,7 +65,7 @@ export function Footer() {
             <Link href="/" onClick={handleLogoClick} className="inline-block hover:opacity-80 transition-opacity">
               <Image
                 src="/logo.png"
-                alt="Talent Scout AI"
+                alt="Scout AI"
                 width={112}
                 height={70}
                 className="h-12 w-auto mb-4"
@@ -130,7 +130,7 @@ export function Footer() {
         <div className="border-t border-white/20 mt-8 pt-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
             <p className="text-white/60 text-sm text-center sm:text-left">
-              © {currentYear} Talent Scout AI – {t.rights}
+              © {currentYear} Scout AI – {t.rights}
             </p>
             <div className="hidden sm:flex space-x-4 text-sm">
               <Link href="/privacy-policy" className="text-white/60 hover:text-red-600">{t.privacyPolicy}</Link>

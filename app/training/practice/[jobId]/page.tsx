@@ -177,7 +177,7 @@ function JobPracticeContent() {
 
   // 🔥 Generar prompt personalizado para práctica
   const generatePracticePrompt = (job: JobContext, candidate: CandidateContext): string => {
-    return `Eres un entrevistador profesional de Talent Scout AI realizando una entrevista de práctica.
+    return `Eres un entrevistador profesional de Scout AI realizando una entrevista de práctica.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📋 VACANTE: ${job.title}
@@ -359,7 +359,7 @@ Esto es una PRÁCTICA, así que ayúdale a mejorar con feedback específico.`
               </Button>
               <Image
                 src="/logo.png"
-                alt="Talent Scout AI"
+                alt="Scout AI"
                 width={100}
                 height={63}
                 className="h-10 w-auto"
