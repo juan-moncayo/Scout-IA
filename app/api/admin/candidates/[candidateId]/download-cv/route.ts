@@ -6,7 +6,7 @@ import { join } from 'path'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ candidateId: string }> }
+  { params }: { params: { candidateId: string } }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -31,9 +31,14 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // ⭐ AWAIT params antes de usar
-    const { candidateId: candidateIdStr } = await params
-    const candidateId = parseInt(candidateIdStr)
+    // ✅ Parsear candidateId directamente
+    const candidateId = parseInt(params.candidateId)
+
+    if (isNaN(candidateId)) {
+      return NextResponse.json({ error: 'Invalid candidate ID' }, { status: 400 })
+    }
+
+    console.log('[DOWNLOAD-CV] Fetching candidate:', candidateId)
 
     // Obtener candidato
     const candidateResult = await query(
@@ -42,13 +47,20 @@ export async function GET(
     )
 
     if (candidateResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'Candidate not found',
+        candidateId 
+      }, { status: 404 })
     }
 
     const candidate = candidateResult.rows[0]
 
     if (!candidate.cv_file_path) {
-      return NextResponse.json({ error: 'CV file not found' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'CV file not found for this candidate',
+        candidateId,
+        message: 'This candidate does not have a CV file uploaded'
+      }, { status: 404 })
     }
 
     // Leer archivo del disco

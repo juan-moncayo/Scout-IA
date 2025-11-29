@@ -4,7 +4,7 @@ import { query } from '@/lib/db'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ candidateId: string }> }
+  { params }: { params: { candidateId: string } }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -29,26 +29,38 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // ⭐ AWAIT params antes de usar
-    const { candidateId: candidateIdStr } = await params
-    const candidateId = parseInt(candidateIdStr)
+    // ✅ Parsear candidateId directamente
+    const candidateId = parseInt(params.candidateId)
+
+    if (isNaN(candidateId)) {
+      return NextResponse.json({ error: 'Invalid candidate ID' }, { status: 400 })
+    }
+
+    console.log('[DELETE] Attempting to delete candidate:', candidateId)
 
     // Eliminar candidato
     const result = await query('DELETE FROM candidates WHERE id = ?', [candidateId])
 
+    console.log('[DELETE] Delete result:', { rowCount: result.rowCount, rows: result.rows })
+
     if (result.rowCount === 0) {
-      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'Candidate not found',
+        candidateId,
+        message: `No candidate exists with ID ${candidateId}`
+      }, { status: 404 })
     }
 
-    console.log('[DELETE] Candidate deleted:', candidateId)
+    console.log('[DELETE] ✅ Candidate deleted successfully:', candidateId)
 
     return NextResponse.json({
       success: true,
-      message: 'Candidate deleted successfully'
+      message: 'Candidate deleted successfully',
+      candidateId
     })
 
   } catch (error: any) {
-    console.error('[DELETE] Error:', error)
+    console.error('[DELETE] ❌ Error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to delete candidate' },
       { status: 500 }

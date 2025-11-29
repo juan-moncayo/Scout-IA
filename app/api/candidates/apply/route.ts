@@ -42,7 +42,6 @@ async function evaluateCandidateWithAI(
   try {
     console.log('[AI] Fetching active job postings...')
     
-    // Obtener vacantes activas
     const jobsResult = await query(
       `SELECT id, title, department, location, requirements, responsibilities, interview_guidelines
        FROM job_postings WHERE is_active = 1`
@@ -62,7 +61,6 @@ async function evaluateCandidateWithAI(
 
     console.log(`[AI] Found ${activeJobs.length} active job(s)`)
 
-    // Crear contexto detallado de vacantes
     const jobsContext = activeJobs.map((job: any, i: number) => `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VACANTE #${i + 1}: ${job.title}
@@ -81,13 +79,11 @@ ${job.responsibilities}
 ${job.interview_guidelines}
 `).join('\n\n')
 
-    // Convertir PDF a base64
     const arrayBuffer = await cvFile.arrayBuffer()
     const base64Data = Buffer.from(arrayBuffer).toString('base64')
 
     console.log('[AI] Sending request to Claude with PDF...')
 
-    // Llamada a Claude con PDF
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 5000,
@@ -212,7 +208,6 @@ CRÍTICO:
     const responseText = content.text
     console.log('[AI] Response preview:', responseText.substring(0, 300))
 
-    // Extraer datos estructurados
     const resumeMatch = responseText.match(/RESUME_SUMMARY:\s*\n([\s\S]+?)(?=\n\nFIT_SCORE:|FIT_SCORE:)/i)
     const resumeText = resumeMatch 
       ? resumeMatch[1].trim() 
@@ -224,7 +219,6 @@ CRÍTICO:
     const bestMatchMatch = responseText.match(/BEST_MATCH:\s*(.+?)(?=\n|$)/i)
     const bestMatch = bestMatchMatch ? bestMatchMatch[1].trim() : 'No determinado'
 
-    // Extraer match percentages
     const matchPercentages: Record<string, number> = {}
     const matchSection = responseText.match(/MATCH_PERCENTAGES:\s*\n([\s\S]+?)(?=\n\nEVALUACIÓN|EVALUACIÓN)/i)
     
@@ -257,7 +251,6 @@ CRÍTICO:
     console.error('[AI] Error:', error)
     console.error('[AI] Error details:', error.message)
     
-    // Error más específico
     if (error.status === 401) {
       return {
         evaluation: '❌ Error: API key de Claude inválida.',
@@ -299,8 +292,8 @@ export async function POST(request: NextRequest) {
     const cvFile = formData.get('cv_file') as File
 
     console.log('[APPLY] Processing application for:', email)
-    console.log('[APPLY] File type:', cvFile.type)
-    console.log('[APPLY] File size:', cvFile.size, 'bytes')
+    console.log('[APPLY] File type:', cvFile?.type)
+    console.log('[APPLY] File size:', cvFile?.size, 'bytes')
 
     if (!fullName || !email || !cvFile) {
       return NextResponse.json(
@@ -345,7 +338,7 @@ export async function POST(request: NextRequest) {
     console.log('[APPLY] Best Match:', bestMatch)
     console.log('[APPLY] Match Percentages:', matchPercentages)
 
-    // Guardar en BD (incluyendo best_match si quieres agregarlo a la tabla)
+    // Guardar en BD
     await query(
       `INSERT INTO candidates (
         full_name, email, phone, resume_text, cover_letter,
@@ -362,7 +355,7 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    console.log('[APPLY] Candidate saved successfully')
+    console.log('[APPLY] ✅ Candidate saved successfully')
 
     return NextResponse.json({
       success: true,

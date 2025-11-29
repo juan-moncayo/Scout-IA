@@ -5,7 +5,7 @@ import { evaluateCVText } from '@/lib/ai/claude-client'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ candidateId: string }> }
+  { params }: { params: { candidateId: string } }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -30,9 +30,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // ⭐ AWAIT params antes de usar
-    const { candidateId: candidateIdStr } = await params
-    const candidateId = parseInt(candidateIdStr)
+    // ✅ Parsear candidateId directamente
+    const candidateId = parseInt(params.candidateId)
+
+    if (isNaN(candidateId)) {
+      return NextResponse.json({ error: 'Invalid candidate ID' }, { status: 400 })
+    }
+
+    console.log('[RE-EVALUATE] Starting re-evaluation for candidate:', candidateId)
 
     // Obtener candidato
     const candidateResult = await query(
@@ -41,12 +46,15 @@ export async function POST(
     )
 
     if (candidateResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+      return NextResponse.json({ 
+        error: 'Candidate not found',
+        candidateId 
+      }, { status: 404 })
     }
 
     const candidate = candidateResult.rows[0]
 
-    console.log('[RE-EVALUATE] Iniciando re-evaluación:', candidate.email)
+    console.log('[RE-EVALUATE] Re-evaluating:', candidate.email)
 
     // Obtener vacantes activas
     const jobsResult = await query(
@@ -55,6 +63,13 @@ export async function POST(
     )
 
     const activeJobs = jobsResult.rows
+
+    if (activeJobs.length === 0) {
+      return NextResponse.json({ 
+        error: 'No active job postings available',
+        message: 'Cannot re-evaluate without active job postings'
+      }, { status: 400 })
+    }
 
     // Limpiar resume_text (quitar "MEJOR MATCH:" anterior)
     let cleanResumeText = candidate.resume_text
@@ -70,7 +85,7 @@ export async function POST(
       activeJobs
     )
 
-    console.log('[RE-EVALUATE] ✅ Re-evaluación completa:', { fitScore, bestMatch })
+    console.log('[RE-EVALUATE] ✅ Re-evaluation complete:', { fitScore, bestMatch })
 
     // Actualizar en BD
     const resumeWithMatch = `MEJOR MATCH: ${bestMatch} (${matchPercentages[bestMatch] || 0}%)\n\n${cleanResumeText}`
@@ -95,7 +110,8 @@ export async function POST(
       message: 'Candidato re-evaluado exitosamente',
       fit_score: fitScore,
       best_match: bestMatch,
-      match_percentages: matchPercentages
+      match_percentages: matchPercentages,
+      candidateId
     })
 
   } catch (error: any) {

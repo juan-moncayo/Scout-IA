@@ -252,6 +252,7 @@ export async function runMigrations() {
           full_name TEXT NOT NULL,
           email TEXT NOT NULL,
           phone TEXT,
+          cv_file_path TEXT,  /* ← CRUCIAL: Esta columna debe existir */
           resume_text TEXT NOT NULL,
           cover_letter TEXT,
           ai_evaluation TEXT,

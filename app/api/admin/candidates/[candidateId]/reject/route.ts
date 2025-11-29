@@ -4,7 +4,7 @@ import { query } from '@/lib/db'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ candidateId: string }> }
+  { params }: { params: { candidateId: string } }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -36,9 +36,17 @@ export async function POST(
       )
     }
 
-    // ⭐ AWAIT params antes de usar
-    const { candidateId: candidateIdStr } = await params
-    const candidateId = parseInt(candidateIdStr)
+    // ✅ Parsear candidateId directamente
+    const candidateId = parseInt(params.candidateId)
+
+    if (isNaN(candidateId)) {
+      return NextResponse.json(
+        { error: 'Invalid candidate ID' },
+        { status: 400 }
+      )
+    }
+
+    console.log('[REJECT] Attempting to reject candidate:', candidateId)
 
     // Actualizar estado del candidato
     const result = await query(
@@ -46,22 +54,29 @@ export async function POST(
       [candidateId]
     )
 
+    console.log('[REJECT] Update result:', { rowCount: result.rowCount, rows: result.rows })
+
     if (result.rowCount === 0) {
       return NextResponse.json(
-        { error: 'Candidate not found' },
+        { 
+          error: 'Candidate not found',
+          candidateId,
+          message: `No candidate exists with ID ${candidateId}` 
+        },
         { status: 404 }
       )
     }
 
-    console.log('[REJECT] Candidato rechazado:', candidateId)
+    console.log('[REJECT] ✅ Candidato rechazado:', candidateId)
 
     return NextResponse.json({
       success: true,
-      message: 'Candidate rejected'
+      message: 'Candidate rejected',
+      candidateId
     })
 
   } catch (error: any) {
-    console.error('[REJECT] Error:', error)
+    console.error('[REJECT] ❌ Error:', error)
     return NextResponse.json(
       { error: error.message || 'Failed to reject candidate' },
       { status: 500 }

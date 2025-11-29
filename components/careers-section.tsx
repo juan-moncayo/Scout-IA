@@ -14,11 +14,15 @@ import {
   AlertCircle,
   Sparkles,
   X,
-  TrendingUp
+  TrendingUp,
+  Clock,
+  Shield
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function CareersSection() {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -34,6 +38,7 @@ export function CareersSection() {
     matchPercentages: Record<string, number>
   } | null>(null)
   const [error, setError] = useState('')
+  const [lastSubmitTime, setLastSubmitTime] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,9 +77,20 @@ export function CareersSection() {
       return
     }
 
+    // 🔒 Rate limiting simple (1 envío cada 30 segundos)
+    const now = Date.now()
+    const timeSinceLastSubmit = now - lastSubmitTime
+    if (timeSinceLastSubmit < 30000) {
+      const waitTime = Math.ceil((30000 - timeSinceLastSubmit) / 1000)
+      setError(`⏱️ Por favor espera ${waitTime} segundos antes de enviar otra postulación`)
+      return
+    }
+
     setUploading(true)
 
     try {
+      console.log('[CAREERS] Submitting application...')
+
       const formDataToSend = new FormData()
       formDataToSend.append('full_name', formData.fullName)
       formDataToSend.append('email', formData.email)
@@ -90,6 +106,7 @@ export function CareersSection() {
       const data = await response.json()
 
       if (response.ok) {
+        setLastSubmitTime(now) // ✅ Actualizar último envío
         setSuccess(true)
         setSuccessData({
           fitScore: data.fit_score || 0,
@@ -109,11 +126,22 @@ export function CareersSection() {
           fileInputRef.current.value = ''
         }
 
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        // ✅ Scroll suave al mensaje de éxito (NO al inicio)
+        setTimeout(() => {
+          const successElement = document.getElementById('success-message')
+          if (successElement) {
+            successElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'nearest' 
+            })
+          }
+        }, 100)
+
       } else {
         setError(data.error || 'Error al enviar tu postulación. Intenta de nuevo.')
       }
     } catch (err) {
+      console.error('[CAREERS] Error:', err)
       setError('Error de conexión. Por favor intenta de nuevo.')
     } finally {
       setUploading(false)
@@ -121,7 +149,11 @@ export function CareersSection() {
   }
 
   return (
-    <section className="relative py-24 bg-gradient-to-br from-black via-red-950 to-black overflow-hidden">
+    <section 
+      ref={sectionRef}
+      id="careers-section"
+      className="relative py-24 bg-gradient-to-br from-black via-red-950 to-black overflow-hidden"
+    >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500/5 via-transparent to-transparent" />
       <div className="absolute inset-0 bg-grid-white/[0.02]" />
 
@@ -156,9 +188,10 @@ export function CareersSection() {
         <AnimatePresence>
           {success && successData && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              id="success-message"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               className="max-w-3xl mx-auto mb-8"
             >
               <Card className="bg-gradient-to-r from-green-900/40 to-blue-900/40 border-2 border-green-500">
@@ -270,6 +303,8 @@ export function CareersSection() {
                     <p className="text-red-500 text-sm">{error}</p>
                   </div>
                 )}
+
+                {/* 🔒 Indicador de protección anti-spam */}
 
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-gray-300">
@@ -451,11 +486,11 @@ export function CareersSection() {
 
           <div className="text-center">
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <TrendingUp className="h-8 w-8 text-red-500" />
+              <Shield className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="text-white font-semibold mb-2">Match Inteligente</h3>
+            <h3 className="text-white font-semibold mb-2">Protección Anti-Spam</h3>
             <p className="text-gray-400 text-sm">
-              Te mostramos tu % de compatibilidad con cada vacante
+              Rate limiting de 30 segundos entre envíos
             </p>
           </div>
         </motion.div>

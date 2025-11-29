@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ candidateId: string }> }
+  { params }: { params: { candidateId: string } }
 ) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -37,9 +37,15 @@ export async function POST(
       )
     }
 
-    // ⭐ AWAIT params antes de usar
-    const { candidateId: candidateIdStr } = await params
-    const candidateId = parseInt(candidateIdStr)
+    // ✅ Parsear candidateId directamente (Next.js 14)
+    const candidateId = parseInt(params.candidateId)
+
+    if (isNaN(candidateId)) {
+      return NextResponse.json(
+        { error: 'Invalid candidate ID' },
+        { status: 400 }
+      )
+    }
 
     // Obtener datos del candidato
     const candidateResult = await query(
@@ -80,9 +86,9 @@ export async function POST(
     const tempPassword = `Scout${Math.random().toString(36).substring(2, 10)}`
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
-    // Crear usuario
+    // ✅ CORRECCIÓN: Usar password_hash en lugar de password
     await query(
-      `INSERT INTO users (email, password, full_name, role, onboarding_completed, is_active)
+      `INSERT INTO users (email, password_hash, full_name, role, onboarding_completed, is_active)
        VALUES (?, ?, ?, 'agent', 1, 1)`,
       [candidate.email, hashedPassword, candidate.full_name]
     )
