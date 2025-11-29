@@ -5,7 +5,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Home, Building2, Factory, Zap, Shield, Wrench, CheckCircle } from "lucide-react"
+import { Home, Building2, Factory, CheckCircle } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { ContactSection } from "@/components/contact-section"
@@ -13,13 +13,13 @@ import { ContactSection } from "@/components/contact-section"
 const translations = {
   en: {
     title: "Our Services",
-    subtitle: "Professional roofing and solar solutions for every need",
-    getQuote: "Go to Agent",
+    subtitle: "AI-powered recruitment solutions for modern companies",
+    goHome: "Go to Home",
   },
   es: {
     title: "Nuestros Servicios",
-    subtitle: "Soluciones profesionales para tu empresa",
-    getQuote: "Ir al Agente",
+    subtitle: "Soluciones de reclutamiento impulsadas por IA para empresas modernas",
+    goHome: "Ir al Inicio",
   },
 }
 
@@ -39,37 +39,58 @@ export default function ServicesPage() {
   const services = [
     {
       icon: Home,
-      title: "Agente de Reclutamiento",
-      description: "Evaluación automática y entrevistas inteligentes",
-      services: [
+      title: currentLang === "es" ? "Agente de Reclutamiento" : "Recruitment Agent",
+      description: currentLang === "es" 
+        ? "Evaluación automática y entrevistas inteligentes" 
+        : "Automatic evaluation and smart interviews",
+      services: currentLang === "es" ? [
         "Lectura de CVs",
         "Preguntas dinámicas",
         "Evaluación técnica",
         "Puntaje del candidato",
+      ] : [
+        "CV Reading",
+        "Dynamic Questions",
+        "Technical Evaluation",
+        "Candidate Scoring",
       ],
       bgColor: "bg-red-500",
     },
     {
       icon: Building2,
-      title: "Filtro de Hojas de Vida",
-      description: "Procesamiento inteligente de información",
-      services: [
+      title: currentLang === "es" ? "Filtro de Hojas de Vida" : "Resume Filtering",
+      description: currentLang === "es"
+        ? "Procesamiento inteligente de información"
+        : "Smart information processing",
+      services: currentLang === "es" ? [
         "Análisis semántico",
         "Detección de habilidades",
         "Cruce con oferta laboral",
         "Eliminación de ruido",
+      ] : [
+        "Semantic Analysis",
+        "Skill Detection",
+        "Job Match Cross-reference",
+        "Noise Elimination",
       ],
       bgColor: "bg-gray-800",
     },
     {
       icon: Factory,
-      title: "Asistente de Entrevista",
-      description: "Preguntas adaptativas según el perfil",
-      services: [
+      title: currentLang === "es" ? "Asistente de Entrevista" : "Interview Assistant",
+      description: currentLang === "es"
+        ? "Preguntas adaptativas según el perfil"
+        : "Adaptive questions based on profile",
+      services: currentLang === "es" ? [
         "Evaluación por rol",
         "Preguntas niveladas",
         "Puntaje según desempeño",
         "Reporte del candidato",
+      ] : [
+        "Role-based Evaluation",
+        "Leveled Questions",
+        "Performance Scoring",
+        "Candidate Report",
       ],
       bgColor: "bg-red-500",
     },
@@ -109,7 +130,7 @@ export default function ServicesPage() {
         <section ref={heroRef} className="py-20 bg-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-white">
-              {currentLang === "es" ? "Nuestros Servicios" : "Our Services"}
+              {t.title}
             </h1>
 
             <p className="text-xl text-gray-300 mt-6">
@@ -145,13 +166,12 @@ export default function ServicesPage() {
                     ))}
                   </ul>
 
-                  {/* BOTÓN EDITADO */}
                   <Button
                     size="sm"
                     className="w-full bg-red-500 hover:bg-red-600 text-white"
-                    onClick={() => (window.location.href = "/agente")}
+                    onClick={() => (window.location.href = "/")}
                   >
-                    {t.getQuote}
+                    {t.goHome}
                   </Button>
                 </CardContent>
               </Card>

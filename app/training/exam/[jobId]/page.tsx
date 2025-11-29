@@ -1,20 +1,37 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { AuthGuard } from "@/components/training/auth-guard"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { VoiceRecorder } from "@/components/training/VoiceRecorder"
 import { AvatarDisplay } from "@/components/training/AvatarDisplay"
-import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Loader2, Briefcase } from "lucide-react"
+import { useRouter, useParams } from "next/navigation"
 import Image from "next/image"
-import { VOICE_EXAM_SYSTEM_PROMPT } from "@/lib/ai/prompts"
 
 interface ConversationMessage {
   role: 'user' | 'assistant'
   content: string
+}
+
+interface JobContext {
+  id: number
+  title: string
+  department: string
+  location: string
+  employment_type: string
+  requirements: string
+  responsibilities: string
+  interview_guidelines: string
+}
+
+interface CandidateContext {
+  full_name: string
+  email: string
+  resume_text: string
+  cover_letter: string
 }
 
 interface ExamResults {
@@ -27,9 +44,15 @@ interface ExamResults {
   feedback: string
 }
 
-function VoiceExamContent() {
+function JobExamContent() {
   const { token, user, logout } = useAuth()
   const router = useRouter()
+  const params = useParams()
+  const jobId = params?.jobId as string
+  
+  const [jobContext, setJobContext] = useState<JobContext | null>(null)
+  const [candidateContext, setCandidateContext] = useState<CandidateContext | null>(null)
+  const [isLoadingContext, setIsLoadingContext] = useState(true)
   
   const [hasStarted, setHasStarted] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -42,10 +65,49 @@ function VoiceExamContent() {
   const [showConversation, setShowConversation] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
 
+  // Cargar contexto de vacante y candidato
+  useEffect(() => {
+    if (jobId && token) {
+      fetchJobContext()
+    }
+  }, [jobId, token])
+
+  const fetchJobContext = async () => {
+    setIsLoadingContext(true)
+    try {
+      console.log('[EXAM] Fetching context for job:', jobId)
+      const response = await fetch(`/api/training/job-context/${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('[EXAM] Context loaded:', data)
+        setJobContext(data.job)
+        setCandidateContext(data.candidate)
+      } else {
+        console.error('[EXAM] Failed to load context:', response.status)
+        alert('Error loading job information')
+        router.push('/training/dashboard')
+      }
+    } catch (error) {
+      console.error('[EXAM] Error fetching context:', error)
+      alert('Error loading job information')
+      router.push('/training/dashboard')
+    } finally {
+      setIsLoadingContext(false)
+    }
+  }
+
   const startExam = async () => {
+    if (!jobContext || !candidateContext) return
+
     setHasStarted(true)
     
-    const initialMessage = "Yes? Can I help you? I see you have a clipboard. Are you selling something?"
+    // 🔥 Saludo personalizado como gerente del departamento
+    const initialMessage = `Buenos días ${candidateContext.full_name}, soy el gerente de ${jobContext.department}. Hemos revisado tu aplicación para el puesto de ${jobContext.title} y me gustaría hacerte algunas preguntas sobre tu experiencia. ¿Estás listo para comenzar?`
     
     const msg: ConversationMessage = {
       role: 'assistant',
@@ -59,6 +121,8 @@ function VoiceExamContent() {
   }
 
   const handleVoiceInput = async (transcript: string) => {
+    if (!jobContext || !candidateContext) return
+
     setIsProcessing(true)
 
     const userMessage: ConversationMessage = {
@@ -73,10 +137,8 @@ function VoiceExamContent() {
     try {
       const isLastExchange = newExchangeCount >= 6
 
-      let promptAddition = ''
-      if (isLastExchange) {
-        promptAddition = '\n\n[SYSTEM: This is the final exchange. After responding naturally as Mrs. Johnson, conclude the conversation naturally (e.g., "Let me think about it..."), then provide your evaluation scores in the exact format specified.]'
-      }
+      // 🔥 PROMPT PERSONALIZADO de EXAMEN según la vacante
+      const customSystemPrompt = generateExamPrompt(jobContext, candidateContext, isLastExchange)
 
       const chatResponse = await fetch('/api/training/ai/chat', {
         method: 'POST',
@@ -85,9 +147,9 @@ function VoiceExamContent() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          message: transcript + promptAddition,
+          message: transcript,
           conversationHistory: conversation,
-          systemPrompt: VOICE_EXAM_SYSTEM_PROMPT
+          systemPrompt: customSystemPrompt
         })
       })
 
@@ -119,6 +181,112 @@ function VoiceExamContent() {
     }
   }
 
+  // 🔥 Generar prompt personalizado para EXAMEN
+  const generateExamPrompt = (job: JobContext, candidate: CandidateContext, isFinal: boolean): string => {
+    let prompt = `Eres un evaluador senior realizando el EXAMEN FINAL para el puesto de "${job.title}".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 VACANTE A EVALUAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Puesto: ${job.title}
+Departamento: ${job.department}
+Ubicación: ${job.location}
+
+REQUISITOS QUE DEBE CUMPLIR:
+${job.requirements}
+
+RESPONSABILIDADES QUE TENDRÁ:
+${job.responsibilities}
+
+${job.interview_guidelines ? `CRITERIOS DE EVALUACIÓN (MUY IMPORTANTE):
+${job.interview_guidelines}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 CANDIDATO: ${candidate.full_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PERFIL DEL CANDIDATO:
+${candidate.resume_text}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 INSTRUCCIONES DEL EXAMEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TU ROL: Eres el GERENTE DE CONTRATACIÓN EXIGENTE para ${job.title}.
+
+COMPORTAMIENTO ESTRICTO:
+- Sé profesional pero MUY EXIGENTE y crítico
+- Haz preguntas DIFÍCILES Y TÉCNICAS específicas a "${job.title}"
+- NO aceptes respuestas vagas o generales
+- Cuestiona CADA afirmación que haga el candidato
+- Busca inconsistencias entre su CV y sus respuestas
+- Presenta situaciones COMPLEJAS y problemáticas del día a día
+- Si no responde bien, presiona más duramente
+
+🚫 NUNCA HAGAS ESTO:
+- NO pidas links, URLs, portafolios online, o sitios web
+- NO pidas que envíe archivos, documentos o materiales
+- NO digas "envíame tu portafolio" o "comparte el link"
+- NO seas amable o complaciente
+
+✅ EN SU LUGAR, HAZ ESTO:
+- "Descríbeme EN DETALLE un proyecto específico donde usaste [tecnología]"
+- "Explícame PASO A PASO cómo resolverías [problema técnico complejo]"
+- "Dame un ejemplo CONCRETO con números y resultados de [logro que mencionas]"
+- "¿Cómo justificas que NO tienes [requisito clave] en tu CV?"
+
+DURANTE EL EXAMEN (6 intercambios DIFÍCILES):
+1. Pregunta técnica específica sobre gaps en su CV vs requisitos
+2. Presenta un escenario COMPLEJO con múltiples problemas
+3. Cuestiona su respuesta: "¿Por qué elegirías eso en lugar de [alternativa]?"
+4. Pregunta sobre un fracaso: "Háblame de un proyecto que FALLÓ"
+5. Presiona sobre responsabilidades: "¿Cómo manejarías [situación estresante]?"
+6. Concluye profesionalmente pero sin comprometerte: "Gracias, ${candidate.full_name}. Tenemos otros candidatos por entrevistar. Te contactaremos."
+
+NIVEL DE DIFICULTAD:
+- Preguntas técnicas específicas (no generales)
+- Escenarios con dilemas o problemas sin solución obvia
+- Presión sobre experiencia faltante
+- Pide ejemplos con NÚMEROS y MÉTRICAS
+- Cuestiona TODO lo que no esté respaldado
+- Si responde mal, señálalo directamente: "Esa no es la respuesta que esperaba..."
+
+IMPORTANTE:
+- Este es un EXAMEN REAL - sé exigente
+- NO apruebes mental candidatos débiles
+- Identifica gaps entre CV y requisitos
+- Evalúa si REALMENTE puede hacer el trabajo
+- Sé escéptico de afirmaciones sin pruebas`
+
+    if (isFinal) {
+      prompt += `
+
+[SISTEMA: Este es el intercambio final (#6). Después de responder naturalmente como gerente, proporciona evaluación en este formato EXACTO:]
+
+EVALUACIÓN:
+Confianza: [0-100] - ¿Respondió con seguridad? ¿Manejo bien la presión?
+Claridad: [0-100] - ¿Se expresó claramente? ¿Explicaciones coherentes?
+Profesionalismo: [0-100] - ¿Comportamiento profesional? ¿Tono apropiado?
+Construcción de Confianza: [0-100] - ¿Generó credibilidad? ¿Ejemplos convincentes?
+
+Retroalimentación Detallada:
+[Análisis específico de si el candidato demostró que puede realizar el trabajo de "${job.title}" basándote en:
+- Los requisitos: ${job.requirements.substring(0, 200)}...
+- Las responsabilidades del puesto
+- Sus respuestas durante el examen
+- Gaps entre su experiencia y lo que requiere el puesto]
+
+CRITERIOS DE PUNTUACIÓN PARA ${job.title}:
+- Evalúa contra los requisitos EXACTOS de la vacante
+- Considera si su CV demuestra capacidad para las responsabilidades
+- Califica duramente si no menciona experiencia relevante
+- Da puntos altos solo si demuestra VERDADERA capacidad`
+    }
+
+    return prompt
+  }
+
   const evaluateExam = async (fullTranscript: string, aiFeedback: string) => {
     setIsEvaluating(true)
 
@@ -131,7 +299,8 @@ function VoiceExamContent() {
         },
         body: JSON.stringify({
           transcript: fullTranscript,
-          aiFeedback
+          aiFeedback,
+          jobId: jobContext?.id
         })
       })
 
@@ -151,8 +320,13 @@ function VoiceExamContent() {
   const speakText = async (text: string) => {
     try {
       console.log('[EXAM-TTS] ========== STARTING TTS ==========');
-      setIsSpeaking(true);
+      console.log('[EXAM-TTS] Text length:', text.length, 'characters');
       
+      // 🔥 Marcar que está hablando ANTES de generar audio
+      setIsSpeaking(true);
+      console.log('[EXAM-TTS] ✅ isSpeaking = TRUE (before generating audio)');
+      
+      // Generar audio TTS (ya está en español)
       const ttsResponse = await fetch('/api/training/ai/tts', {
         method: 'POST',
         headers: {
@@ -163,7 +337,9 @@ function VoiceExamContent() {
       })
 
       if (!ttsResponse.ok) {
-        console.error('[EXAM-TTS] TTS failed');
+        console.error('[EXAM-TTS] ❌ TTS API failed:', ttsResponse.status);
+        const errorText = await ttsResponse.text()
+        console.error('[EXAM-TTS] Error details:', errorText)
         setIsSpeaking(false);
         return;
       }
@@ -172,39 +348,47 @@ function VoiceExamContent() {
       const audioBlob = base64ToBlob(ttsData.audio, 'audio/mp3')
       const audioUrl = URL.createObjectURL(audioBlob)
 
+      console.log('[EXAM-TTS] Audio blob created, size:', audioBlob.size, 'bytes');
+
       if (audioRef.current) {
+        // 🔥 Limpiar eventos anteriores
         audioRef.current.onloadedmetadata = null;
         audioRef.current.onplay = null;
         audioRef.current.onended = null;
         audioRef.current.onerror = null;
+        audioRef.current.onpause = null;
 
         audioRef.current.src = audioUrl
         
         audioRef.current.onloadedmetadata = () => {
           const duration = audioRef.current?.duration || 0;
-          console.log('[EXAM-TTS] Audio loaded, duration:', duration.toFixed(2), 'seconds');
+          console.log('[EXAM-TTS] ✅ Audio loaded, duration:', duration.toFixed(2), 'seconds');
         };
 
         audioRef.current.onplay = () => {
-          console.log('[EXAM-TTS] Audio started playing');
+          console.log('[EXAM-TTS] ✅ Audio PLAY event fired');
         };
         
+        // 🔥 Solo cambiar isSpeaking cuando el audio TERMINA
         audioRef.current.onended = () => {
-          console.log('[EXAM-TTS] Audio ended');
+          console.log('[EXAM-TTS] ✅ Audio ENDED - setting isSpeaking = FALSE');
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
         };
 
         audioRef.current.onerror = (e) => {
-          console.error('[EXAM-TTS] Audio error:', e);
+          console.error('[EXAM-TTS] ❌ Audio ERROR:', e);
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
         };
 
+        // NO manejar onpause - solo onended
+        
         await audioRef.current.play();
+        console.log('[EXAM-TTS] Play command sent');
       }
     } catch (error) {
-      console.error('[EXAM-TTS] Exception:', error)
+      console.error('[EXAM-TTS] ❌ Exception:', error)
       setIsSpeaking(false)
     }
   }
@@ -242,6 +426,17 @@ function VoiceExamContent() {
     )
   }
 
+  if (isLoadingContext) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-red-500 mx-auto mb-4" />
+          <p className="text-white">Cargando información del examen...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -260,7 +455,7 @@ function VoiceExamContent() {
               </Button>
               <Image
                 src="/logo.png"
-                alt="Scout IA"
+                alt="Talent Scout AI"
                 width={100}
                 height={63}
                 className="h-10 w-auto"
@@ -271,13 +466,13 @@ function VoiceExamContent() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm text-white font-medium">{user?.full_name}</p>
-                <p className="text-xs text-gray-400">Final Exam</p>
+                <p className="text-xs text-gray-400">Exam: {jobContext?.title}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={logout}
-                className="bg-red-600 text-white hover:bg-red-700 transition-colors duration-200 rounded-md border-none"
+                className="bg-red-600 text-white hover:bg-red-700 border-none"
               >
                 Logout
               </Button>
@@ -292,7 +487,6 @@ function VoiceExamContent() {
           // Pre-Exam Instructions
           <Card className="bg-gray-900 border-gray-700 p-8 max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              {/* 🏅 Video de Medalla Animada */}
               <div className="flex justify-center mb-6">
                 <video
                   autoPlay
@@ -306,48 +500,47 @@ function VoiceExamContent() {
                 </video>
               </div>
               <h1 className="text-3xl font-bold text-white mb-3">
-                Phase 3 Voice Examination
+                Examen de Voz Personalizado
               </h1>
               <p className="text-lg text-gray-300">
-                Demonstrate your roofing sales skills with a realistic customer interaction
+                Demuestra que eres el candidato ideal para {jobContext?.title}
               </p>
             </div>
 
             <div className="space-y-6 mb-8">
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold text-blue-400 mb-3">🎯 Your Role:</h3>
+                <h3 className="font-semibold text-blue-400 mb-3">🎯 Puesto a Evaluar:</h3>
                 <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• You are a roofing sales representative for X Roofing & Solar</li>
-                  <li>• You are going door-to-door after a recent hailstorm</li>
-                  <li>• You will knock on Mrs. Johnson's door and introduce yourself</li>
-                  <li>• Your goal: Inspect her roof and help her file an insurance claim</li>
+                  <li><strong>Título:</strong> {jobContext?.title}</li>
+                  <li><strong>Departamento:</strong> {jobContext?.department}</li>
+                  <li><strong>Ubicación:</strong> {jobContext?.location}</li>
+                  <li><strong>Tipo:</strong> {jobContext?.employment_type}</li>
                 </ul>
               </div>
 
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold text-green-400 mb-3">👤 The Customer:</h3>
-                <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• Mrs. Johnson is a homeowner in Dallas</li>
-                  <li>• She's somewhat skeptical of door-to-door salespeople</li>
-                  <li>• She's concerned about her roof but needs to be convinced</li>
-                  <li>• She will ask realistic questions and may have objections</li>
-                </ul>
+                <h3 className="font-semibold text-green-400 mb-3">📋 Requisitos del Puesto:</h3>
+                <p className="text-gray-300 text-sm whitespace-pre-line">
+                  {jobContext?.requirements}
+                </p>
               </div>
 
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold text-yellow-400 mb-3">📊 Evaluation Criteria:</h3>
+                <h3 className="font-semibold text-yellow-400 mb-3">📊 Criterios de Evaluación:</h3>
                 <ul className="space-y-2 text-gray-300 text-sm">
-                  <li>• <strong className="text-white">Confidence (70% to pass):</strong> Speak with authority and handle objections well</li>
-                  <li>• <strong className="text-white">Clarity (70% to pass):</strong> Explain things clearly without confusing jargon</li>
-                  <li>• <strong className="text-white">Professionalism (70% to pass):</strong> Maintain professional demeanor and tone</li>
-                  <li>• <strong className="text-white">Trust Building (70% to pass):</strong> Establish credibility and be honest</li>
+                  <li>• <strong className="text-white">Confianza (70% para aprobar):</strong> Demuestra seguridad y manejo de objeciones</li>
+                  <li>• <strong className="text-white">Claridad (70% para aprobar):</strong> Explica sin jerga confusa</li>
+                  <li>• <strong className="text-white">Profesionalismo (70% para aprobar):</strong> Tono y comportamiento apropiado</li>
+                  <li>• <strong className="text-white">Construcción de Confianza (70% para aprobar):</strong> Establece credibilidad</li>
                 </ul>
               </div>
 
               <div className="bg-gray-800 border border-red-700 rounded-lg p-6">
-                <h3 className="font-semibold text-red-400 mb-3">⚠️ Important:</h3>
+                <h3 className="font-semibold text-red-400 mb-3">⚠️ Importante:</h3>
                 <p className="text-gray-300 text-sm">
-                  You need an <strong className="text-white">overall score of 70% or higher</strong> to pass this exam. The exam consists of 6 voice exchanges. Speak clearly, professionally, and use what you've learned in your training.
+                  Necesitas un <strong className="text-white">puntaje general de 70% o superior</strong> para aprobar. 
+                  El examen consiste en 6 intercambios. Las preguntas serán específicas para {jobContext?.title} y 
+                  basadas en los requisitos reales del puesto. Habla con claridad y profesionalismo.
                 </p>
               </div>
             </div>
@@ -356,7 +549,7 @@ function VoiceExamContent() {
               onClick={startExam}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg"
             >
-              🚪 Knock on Mrs. Johnson's Door
+              🏆 Comenzar Examen
             </Button>
           </Card>
         ) : examResults ? (
@@ -373,24 +566,27 @@ function VoiceExamContent() {
                 )}
               </div>
               <h2 className="text-3xl font-bold text-white mb-2">
-                {examResults.passed ? '🎉 Exam Passed!' : '❌ Exam Not Passed'}
+                {examResults.passed ? '🎉 Examen Aprobado!' : '❌ No Aprobaste'}
               </h2>
               <p className="text-xl text-gray-300">
-                Overall Score: <span className="font-bold text-white">{examResults.overall}/100</span>
+                Puntaje General: <span className="font-bold text-white">{examResults.overall}/100</span>
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                Para: {jobContext?.title}
               </p>
             </div>
 
             <div className="space-y-6 mb-8">
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 space-y-4">
-                <h3 className="font-semibold text-white mb-4">Detailed Scores:</h3>
-                <ScoreBar label="Confidence" value={examResults.confidence} />
-                <ScoreBar label="Clarity" value={examResults.clarity} />
-                <ScoreBar label="Professionalism" value={examResults.professionalism} />
-                <ScoreBar label="Trust Building" value={examResults.trust_building} />
+                <h3 className="font-semibold text-white mb-4">Puntajes Detallados:</h3>
+                <ScoreBar label="Confianza" value={examResults.confidence} />
+                <ScoreBar label="Claridad" value={examResults.clarity} />
+                <ScoreBar label="Profesionalismo" value={examResults.professionalism} />
+                <ScoreBar label="Construcción de Confianza" value={examResults.trust_building} />
               </div>
 
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold text-blue-400 mb-3">Feedback:</h3>
+                <h3 className="font-semibold text-blue-400 mb-3">Retroalimentación:</h3>
                 <p className="text-gray-300 text-sm whitespace-pre-wrap">{examResults.feedback}</p>
               </div>
             </div>
@@ -400,34 +596,34 @@ function VoiceExamContent() {
                 onClick={() => router.push('/training/dashboard')}
                 className="flex-1 bg-gray-700 hover:bg-gray-600 text-white"
               >
-                Back to Dashboard
+                Volver al Dashboard
               </Button>
               {!examResults.passed && (
                 <Button
                   onClick={() => window.location.reload()}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                 >
-                  Retake Exam
+                  Reintentar Examen
                 </Button>
               )}
             </div>
           </Card>
         ) : (
-          // Exam in Progress - NUEVO LAYOUT MEJORADO
+          // Exam in Progress
           <div className="space-y-6">
             {/* Exam Header */}
             <Card className="bg-white border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <span className="text-3xl">👩</span>
+                  <Briefcase className="h-6 w-6 text-red-600" />
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Mrs. Johnson</h2>
-                    <p className="text-sm text-gray-500">Homeowner - Dallas, TX</p>
+                    <h2 className="text-xl font-bold text-gray-900">{jobContext?.title}</h2>
+                    <p className="text-sm text-gray-500">Gerente de {jobContext?.department}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500 mb-1">
-                    Exchange {exchangeCount}/6
+                    Intercambio {exchangeCount}/6
                   </p>
                   <div className="w-48 bg-gray-200 rounded-full h-2">
                     <div
@@ -441,17 +637,15 @@ function VoiceExamContent() {
 
             {/* Main Exam Area */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Avatar + Voice Recorder Section */}
+              {/* Avatar + Voice Recorder */}
               <div className="lg:col-span-2">
                 <Card className="bg-white border-gray-200 p-6">
-                  {/* Avatar Display */}
                   <AvatarDisplay 
                     isSpeaking={isSpeaking} 
                     token={token!}
                     currentText={currentAIText}
                   />
                   
-                  {/* Voice Recorder - Debajo del avatar */}
                   <div className="mt-4">
                     <VoiceRecorder
                       onTranscriptReady={handleVoiceInput}
@@ -459,50 +653,43 @@ function VoiceExamContent() {
                     />
                   </div>
 
-                  {/* Evaluating Message */}
                   {isEvaluating && (
                     <div className="mt-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg text-center">
                       <p className="text-yellow-700 font-semibold">
-                        ⏳ Evaluating your performance...
+                        ⏳ Evaluando tu desempeño para {jobContext?.title}...
                       </p>
                     </div>
                   )}
                 </Card>
               </div>
 
-              {/* Sidebar - Tips + Conversation History */}
+              {/* Sidebar */}
               <div className="lg:col-span-1 space-y-6">
-                {/* Exam Tips Card */}
+                {/* Exam Tips */}
                 <Card className="bg-white border-gray-200 p-6">
-                  <h3 className="text-gray-900 font-bold text-lg mb-4 flex items-center">
-                    💡 Exam Tips
-                  </h3>
+                  <h3 className="text-gray-900 font-bold text-lg mb-4">💡 Tips del Examen</h3>
                   <ul className="text-gray-600 text-sm space-y-3">
                     <li className="flex items-start">
                       <span className="text-red-500 mr-2 font-bold">→</span>
-                      <span>Introduce yourself professionally</span>
+                      <span>Menciona experiencia específica de tu CV</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-red-500 mr-2 font-bold">→</span>
-                      <span>Mention the recent hailstorm</span>
+                      <span>Relaciona respuestas con los requisitos</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-red-500 mr-2 font-bold">→</span>
-                      <span>Build trust and be transparent</span>
+                      <span>Da ejemplos concretos (método STAR)</span>
                     </li>
                     <li className="flex items-start">
                       <span className="text-red-500 mr-2 font-bold">→</span>
-                      <span>Explain insurance process clearly</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-red-500 mr-2 font-bold">→</span>
-                      <span>Handle objections professionally</span>
+                      <span>Mantén el profesionalismo</span>
                     </li>
                   </ul>
 
                   <div className="mt-6 pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 font-medium">Passing Score:</span>
+                      <span className="text-gray-500 font-medium">Puntaje para Aprobar:</span>
                       <span className="px-3 py-1 rounded-full font-bold bg-green-100 text-green-700">
                         70%
                       </span>
@@ -510,24 +697,18 @@ function VoiceExamContent() {
                   </div>
                 </Card>
 
-                {/* Conversation History Card */}
+                {/* Conversation History */}
                 <Card className="bg-white border-gray-200 p-6">
                   <button
                     onClick={() => setShowConversation(!showConversation)}
                     className="w-full flex items-center justify-between mb-4"
                   >
-                    <h3 className="text-gray-900 font-bold text-lg flex items-center">
-                      💬 Conversation
-                    </h3>
+                    <h3 className="text-gray-900 font-bold text-lg">💬 Conversación</h3>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-semibold">
                         {conversation.length}
                       </span>
-                      {showConversation ? (
-                        <ChevronUp className="h-5 w-5 text-gray-500" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-500" />
-                      )}
+                      {showConversation ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                     </div>
                   </button>
 
@@ -542,25 +723,15 @@ function VoiceExamContent() {
                               : 'bg-gray-50 border-l-4 border-gray-400'
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className={`text-xs font-bold ${
-                              msg.role === 'user' ? 'text-red-700' : 'text-gray-700'
-                            }`}>
-                              {msg.role === 'user' ? 'YOU' : 'MRS. JOHNSON'}
-                            </span>
-                          </div>
-                          <p className="text-gray-800 text-xs leading-relaxed">
-                            {msg.content}
-                          </p>
+                          <span className={`text-xs font-bold ${
+                            msg.role === 'user' ? 'text-red-700' : 'text-gray-700'
+                          }`}>
+                            {msg.role === 'user' ? 'TÚ' : 'GERENTE'}
+                          </span>
+                          <p className="text-gray-800 text-xs mt-1">{msg.content}</p>
                         </div>
                       ))}
                     </div>
-                  )}
-
-                  {!showConversation && (
-                    <p className="text-xs text-gray-400 text-center italic">
-                      Click to view conversation history
-                    </p>
                   )}
                 </Card>
               </div>
@@ -574,10 +745,10 @@ function VoiceExamContent() {
   )
 }
 
-export default function VoiceExamPage() {
+export default function JobExamPage() {
   return (
     <AuthGuard>
-      <VoiceExamContent />
+      <JobExamContent />
     </AuthGuard>
   )
 }

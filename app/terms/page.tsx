@@ -8,86 +8,110 @@ import { useLanguage } from "@/contexts/language-context"
 const translations = {
   en: {
     title: "Terms of Service",
-    subtitle: "Please read these terms carefully before using our roofing and solar services.",
-    lastUpdated: "Last updated: January 2024",
+    subtitle: "Please read these terms carefully before using our AI recruitment services.",
+    lastUpdated: "Last updated: January 2025",
     sections: {
       acceptance: {
         title: "Acceptance of Terms",
-        content: "By accessing and using the services of X Roofing & Solar ('Company', 'we', 'us', or 'our'), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services."
+        content: "By accessing and using the services of Scout IA ('Company', 'we', 'us', or 'our'), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services."
       },
       services: {
         title: "Our Services",
-        content: "X Roofing & Solar provides professional roofing and solar installation services including:",
+        content: "Scout IA provides AI-powered recruitment and candidate evaluation services including:",
         items: [
-          "Roof installation, repair, and maintenance",
-          "Solar panel installation and system design",
-          "Emergency roofing services",
-          "Home improvement consultations",
-          "Warranty and maintenance services"
+          "Automated CV/resume analysis and parsing",
+          "AI-driven voice interviews with candidates",
+          "Intelligent candidate matching with job positions",
+          "Automated candidate scoring and evaluation",
+          "Interview transcription and analysis services"
         ]
       },
       serviceAgreement: {
         title: "Service Agreement",
-        content: "All roofing and solar services are provided subject to a separate service agreement. Key terms include:",
+        content: "All AI recruitment services are provided subject to the following terms:",
         items: [
-          "Written estimates and contracts are required for all projects",
-          "Work schedules are subject to weather conditions and material availability",
-          "Changes to original scope require written approval and may affect pricing",
-          "Payment terms are specified in individual contracts",
-          "Permits and inspections are handled according to local regulations"
+          "Service agreements can be established through our online platform",
+          "AI evaluations are assistive tools and do not replace human decision-making",
+          "Interview schedules are coordinated through our platform",
+          "Pricing is based on usage tiers and number of evaluations",
+          "Data retention policies comply with applicable privacy regulations"
         ]
       },
-      warranties: {
-        title: "Warranties and Guarantees",
-        content: "We provide warranties on our work and materials as follows:",
+      accuracy: {
+        title: "AI Accuracy and Limitations",
+        content: "While our AI systems are highly sophisticated, users should be aware:",
         items: [
-          "Labor warranty: Varies by project type and scope (typically 1-5 years)",
-          "Material warranties: As provided by manufacturers",
-          "Solar system warranties: Performance and equipment warranties as specified",
-          "Warranty claims must be reported promptly and in writing",
-          "Warranties may be voided by unauthorized modifications or improper maintenance"
+          "AI evaluations are recommendations, not final hiring decisions",
+          "Results may vary based on input data quality",
+          "Human recruiters should review all AI-generated assessments",
+          "We continuously improve our algorithms but cannot guarantee 100% accuracy",
+          "Cultural and language nuances may affect evaluation results"
         ]
+      },
+      dataUsage: {
+        title: "Data Usage and Privacy",
+        content: "Your use of our services involves data processing:",
+        items: [
+          "CVs and personal data are processed in accordance with our Privacy Policy",
+          "Interview recordings are encrypted and securely stored",
+          "Candidate data is only shared with authorized recruiters",
+          "We do not sell candidate data to third parties",
+          "Users can request data deletion in accordance with privacy laws"
+        ]
+      },
+      userResponsibilities: {
+        title: "User Responsibilities",
+        content: "As a user of Scout IA, you agree to:",
+        items: [
+          "Provide accurate and truthful information in your CV/resume",
+          "Respond honestly during AI-conducted interviews",
+          "Comply with interview scheduling and attendance requirements",
+          "Not attempt to manipulate or deceive the AI evaluation system",
+          "Respect confidentiality of proprietary AI evaluation methods",
+          "Report any technical issues or concerns promptly"
+        ]
+      },
+      recruiterResponsibilities: {
+        title: "Recruiter Responsibilities",
+        content: "Companies and recruiters using our platform agree to:",
+        items: [
+          "Use AI evaluations as one component of hiring decisions",
+          "Comply with anti-discrimination and employment laws",
+          "Provide accurate job descriptions and requirements",
+          "Respect candidate privacy and data protection rights",
+          "Not misuse candidate data obtained through our platform",
+          "Provide feedback on AI evaluation accuracy when requested"
+        ]
+      },
+      intellectual: {
+        title: "Intellectual Property",
+        content: "All AI algorithms, evaluation methods, interview frameworks, and proprietary technologies used by Scout IA remain our exclusive intellectual property. You may not reverse engineer, copy, or reproduce our AI systems without written permission."
+      },
+      cancellation: {
+        title: "Cancellation and Refund Policy",
+        content: "Service cancellations and refunds are subject to:",
+        items: [
+          "Subscription services can be canceled with 30 days notice",
+          "Completed evaluations are non-refundable",
+          "Unused evaluation credits may be refunded within 90 days",
+          "Interview no-shows by candidates are not eligible for refunds",
+          "We reserve the right to terminate accounts violating these terms"
+        ]
+      },
+      compliance: {
+        title: "Legal Compliance",
+        content: "Scout IA operates in compliance with applicable laws including data protection regulations (GDPR, CCPA), employment laws, and AI ethics guidelines. Our AI systems are designed to be fair, transparent, and non-discriminatory."
       },
       limitations: {
         title: "Limitations of Liability",
         content: "Our liability is limited as follows:",
         items: [
-          "We are not liable for damages caused by acts of nature, vandalism, or normal wear and tear",
-          "Our maximum liability is limited to the contract price of the specific project",
-          "We are not responsible for consequential or indirect damages",
-          "Claims must be made within the warranty period specified in your contract",
-          "We maintain appropriate insurance coverage for our operations"
+          "We are not liable for hiring decisions made based on AI recommendations",
+          "Maximum liability is limited to fees paid in the past 12 months",
+          "We are not responsible for candidate misrepresentation or fraud",
+          "Technical issues or service interruptions may occur without liability",
+          "We maintain appropriate professional liability insurance"
         ]
-      },
-      customerResponsibilities: {
-        title: "Customer Responsibilities",
-        content: "As our customer, you agree to:",
-        items: [
-          "Provide accurate information about your property and needs",
-          "Ensure safe access to work areas",
-          "Obtain necessary permissions from HOAs or landlords if applicable",
-          "Make timely payments according to contract terms",
-          "Report any concerns or issues promptly",
-          "Follow recommended maintenance procedures"
-        ]
-      },
-      intellectual: {
-        title: "Intellectual Property",
-        content: "All designs, proposals, and custom solutions created by X Roofing & Solar remain our intellectual property until paid for in full. You may not reproduce or distribute our proprietary designs without written permission."
-      },
-      cancellation: {
-        title: "Cancellation Policy",
-        content: "Project cancellations are subject to the following terms:",
-        items: [
-          "You may cancel within 3 business days of signing a contract (cooling-off period)",
-          "Cancellations after work has begun may be subject to costs for completed work and materials",
-          "We reserve the right to cancel projects due to safety concerns or permit issues",
-          "Emergency services may have different cancellation terms"
-        ]
-      },
-      compliance: {
-        title: "Legal Compliance",
-        content: "We operate in compliance with all applicable laws and regulations including building codes, safety regulations, and licensing requirements. All work is performed by licensed and insured professionals."
       },
       disputes: {
         title: "Dispute Resolution",
@@ -95,108 +119,132 @@ const translations = {
         items: [
           "Direct communication and good faith negotiation",
           "Mediation through a mutually agreed mediator if needed",
-          "Arbitration or litigation in Dallas County, Texas courts",
-          "Texas state law governs these terms and any disputes"
+          "Arbitration under Colombian commercial arbitration rules",
+          "Colombian law governs these terms and any disputes"
         ]
       },
       modifications: {
         title: "Modifications to Terms",
-        content: "We reserve the right to modify these terms at any time. Changes will be posted on our website and take effect immediately for new contracts. Existing contracts remain subject to the terms in effect at the time of signing."
+        content: "We reserve the right to modify these terms at any time. Changes will be posted on our website and users will be notified via email. Continued use of services after changes constitutes acceptance of modified terms."
       },
       contact: {
         title: "Contact Information",
         content: "For questions about these Terms of Service or our services, contact us:",
         contactInfo: [
-          "Email: info@xroofingandsolar.com",
-          "Phone: (682) 376-2497",
-          "Address: 940 N Belt Line Rd Suite 121 Irving, TX 75061",
-          "Business Hours: Monday-Friday 10:00 AM - 4:00 PM"
+          "Email: legal@scoutia.com",
+          "Phone: +57 316 5031355",
+          "Address: Pasto, Nariño, Colombia",
+          "WhatsApp: https://wa.me/573165031355"
         ]
       }
     }
   },
   es: {
     title: "Términos de Servicio",
-    subtitle: "Por favor lee estos términos cuidadosamente antes de usar nuestros servicios de techado y energía solar.",
-    lastUpdated: "Última actualización: Enero 2024",
+    subtitle: "Por favor lee estos términos cuidadosamente antes de usar nuestros servicios de reclutamiento con IA.",
+    lastUpdated: "Última actualización: Enero 2025",
     sections: {
       acceptance: {
         title: "Aceptación de Términos",
-        content: "Al acceder y usar los servicios de X Roofing & Solar ('Compañía', 'nosotros', 'nuestro'), aceptas estar sujeto a estos Términos de Servicio. Si no estás de acuerdo con estos términos, por favor no uses nuestros servicios."
+        content: "Al acceder y usar los servicios de Scout IA ('Compañía', 'nosotros', 'nuestro'), aceptas estar sujeto a estos Términos de Servicio. Si no estás de acuerdo con estos términos, por favor no uses nuestros servicios."
       },
       services: {
         title: "Nuestros Servicios",
-        content: "X Roofing & Solar proporciona servicios profesionales de techado e instalación solar incluyendo:",
+        content: "Scout IA proporciona servicios de reclutamiento y evaluación de candidatos impulsados por IA, incluyendo:",
         items: [
-          "Instalación, reparación y mantenimiento de techos",
-          "Instalación de paneles solares y diseño de sistemas",
-          "Servicios de emergencia de techado",
-          "Consultas de mejoras del hogar",
-          "Servicios de garantía y mantenimiento"
+          "Análisis y extracción automática de CVs/hojas de vida",
+          "Entrevistas de voz impulsadas por IA con candidatos",
+          "Emparejamiento inteligente de candidatos con puestos de trabajo",
+          "Puntuación y evaluación automática de candidatos",
+          "Servicios de transcripción y análisis de entrevistas"
         ]
       },
       serviceAgreement: {
         title: "Acuerdo de Servicio",
-        content: "Todos los servicios de techado y solar se proporcionan sujetos a un acuerdo de servicio separado. Los términos clave incluyen:",
+        content: "Todos los servicios de reclutamiento con IA se proporcionan sujetos a los siguientes términos:",
         items: [
-          "Se requieren estimaciones y contratos escritos para todos los proyectos",
-          "Los horarios de trabajo están sujetos a condiciones climáticas y disponibilidad de materiales",
-          "Los cambios al alcance original requieren aprobación escrita y pueden afectar el precio",
-          "Los términos de pago se especifican en contratos individuales",
-          "Los permisos e inspecciones se manejan según las regulaciones locales"
+          "Los acuerdos de servicio se pueden establecer a través de nuestra plataforma en línea",
+          "Las evaluaciones de IA son herramientas asistivas y no reemplazan la toma de decisiones humanas",
+          "Los horarios de entrevista se coordinan a través de nuestra plataforma",
+          "Los precios se basan en niveles de uso y número de evaluaciones",
+          "Las políticas de retención de datos cumplen con las regulaciones de privacidad aplicables"
         ]
       },
-      warranties: {
-        title: "Garantías",
-        content: "Proporcionamos garantías en nuestro trabajo y materiales de la siguiente manera:",
+      accuracy: {
+        title: "Precisión y Limitaciones de la IA",
+        content: "Aunque nuestros sistemas de IA son altamente sofisticados, los usuarios deben estar conscientes:",
         items: [
-          "Garantía de mano de obra: Varía por tipo y alcance del proyecto (típicamente 1-5 años)",
-          "Garantías de materiales: Según lo proporcionado por los fabricantes",
-          "Garantías de sistemas solares: Garantías de rendimiento y equipo según se especifique",
-          "Las reclamaciones de garantía deben reportarse prontamente y por escrito",
-          "Las garantías pueden ser anuladas por modificaciones no autorizadas o mantenimiento inadecuado"
+          "Las evaluaciones de IA son recomendaciones, no decisiones finales de contratación",
+          "Los resultados pueden variar según la calidad de los datos de entrada",
+          "Los reclutadores humanos deben revisar todas las evaluaciones generadas por IA",
+          "Mejoramos continuamente nuestros algoritmos pero no podemos garantizar 100% de precisión",
+          "Los matices culturales y de idioma pueden afectar los resultados de evaluación"
         ]
+      },
+      dataUsage: {
+        title: "Uso de Datos y Privacidad",
+        content: "Tu uso de nuestros servicios implica procesamiento de datos:",
+        items: [
+          "Los CVs y datos personales se procesan de acuerdo con nuestra Política de Privacidad",
+          "Las grabaciones de entrevistas están encriptadas y almacenadas de forma segura",
+          "Los datos de candidatos solo se comparten con reclutadores autorizados",
+          "No vendemos datos de candidatos a terceros",
+          "Los usuarios pueden solicitar eliminación de datos de acuerdo con las leyes de privacidad"
+        ]
+      },
+      userResponsibilities: {
+        title: "Responsabilidades del Usuario",
+        content: "Como usuario de Scout IA, aceptas:",
+        items: [
+          "Proporcionar información precisa y veraz en tu CV/hoja de vida",
+          "Responder honestamente durante entrevistas realizadas por IA",
+          "Cumplir con los requisitos de programación y asistencia a entrevistas",
+          "No intentar manipular o engañar al sistema de evaluación de IA",
+          "Respetar la confidencialidad de los métodos de evaluación de IA propietarios",
+          "Reportar cualquier problema técnico o inquietud prontamente"
+        ]
+      },
+      recruiterResponsibilities: {
+        title: "Responsabilidades del Reclutador",
+        content: "Las empresas y reclutadores que usan nuestra plataforma aceptan:",
+        items: [
+          "Usar las evaluaciones de IA como un componente de las decisiones de contratación",
+          "Cumplir con las leyes anti-discriminación y de empleo",
+          "Proporcionar descripciones y requisitos de trabajo precisos",
+          "Respetar la privacidad y los derechos de protección de datos de los candidatos",
+          "No hacer mal uso de los datos de candidatos obtenidos a través de nuestra plataforma",
+          "Proporcionar retroalimentación sobre la precisión de la evaluación de IA cuando se solicite"
+        ]
+      },
+      intellectual: {
+        title: "Propiedad Intelectual",
+        content: "Todos los algoritmos de IA, métodos de evaluación, marcos de entrevista y tecnologías propietarias utilizadas por Scout IA siguen siendo nuestra propiedad intelectual exclusiva. No puedes realizar ingeniería inversa, copiar o reproducir nuestros sistemas de IA sin permiso escrito."
+      },
+      cancellation: {
+        title: "Política de Cancelación y Reembolso",
+        content: "Las cancelaciones de servicio y reembolsos están sujetos a:",
+        items: [
+          "Los servicios de suscripción pueden cancelarse con 30 días de aviso",
+          "Las evaluaciones completadas no son reembolsables",
+          "Los créditos de evaluación no utilizados pueden reembolsarse dentro de 90 días",
+          "Las inasistencias a entrevistas por parte de candidatos no son elegibles para reembolso",
+          "Nos reservamos el derecho de terminar cuentas que violen estos términos"
+        ]
+      },
+      compliance: {
+        title: "Cumplimiento Legal",
+        content: "Scout IA opera en cumplimiento con las leyes aplicables incluyendo regulaciones de protección de datos (GDPR, CCPA), leyes de empleo y directrices de ética de IA. Nuestros sistemas de IA están diseñados para ser justos, transparentes y no discriminatorios."
       },
       limitations: {
         title: "Limitaciones de Responsabilidad",
         content: "Nuestra responsabilidad está limitada de la siguiente manera:",
         items: [
-          "No somos responsables por daños causados por actos de la naturaleza, vandalismo o desgaste normal",
-          "Nuestra responsabilidad máxima está limitada al precio del contrato del proyecto específico",
-          "No somos responsables por daños consecuentes o indirectos",
-          "Las reclamaciones deben hacerse dentro del período de garantía especificado en tu contrato",
-          "Mantenemos cobertura de seguro apropiada para nuestras operaciones"
+          "No somos responsables por decisiones de contratación basadas en recomendaciones de IA",
+          "La responsabilidad máxima está limitada a las tarifas pagadas en los últimos 12 meses",
+          "No somos responsables por tergiversación o fraude del candidato",
+          "Pueden ocurrir problemas técnicos o interrupciones del servicio sin responsabilidad",
+          "Mantenemos seguro de responsabilidad profesional apropiado"
         ]
-      },
-      customerResponsibilities: {
-        title: "Responsabilidades del Cliente",
-        content: "Como nuestro cliente, aceptas:",
-        items: [
-          "Proporcionar información precisa sobre tu propiedad y necesidades",
-          "Asegurar acceso seguro a las áreas de trabajo",
-          "Obtener permisos necesarios de HOAs o propietarios si aplica",
-          "Hacer pagos oportunos según los términos del contrato",
-          "Reportar cualquier preocupación o problema prontamente",
-          "Seguir los procedimientos de mantenimiento recomendados"
-        ]
-      },
-      intellectual: {
-        title: "Propiedad Intelectual",
-        content: "Todos los diseños, propuestas y soluciones personalizadas creadas por X Roofing & Solar siguen siendo nuestra propiedad intelectual hasta ser pagadas en su totalidad. No puedes reproducir o distribuir nuestros diseños propietarios sin permiso escrito."
-      },
-      cancellation: {
-        title: "Política de Cancelación",
-        content: "Las cancelaciones de proyectos están sujetas a los siguientes términos:",
-        items: [
-          "Puedes cancelar dentro de 3 días hábiles de firmar un contrato (período de reflexión)",
-          "Las cancelaciones después de que el trabajo haya comenzado pueden estar sujetas a costos por trabajo completado y materiales",
-          "Nos reservamos el derecho de cancelar proyectos debido a preocupaciones de seguridad o problemas de permisos",
-          "Los servicios de emergencia pueden tener términos de cancelación diferentes"
-        ]
-      },
-      compliance: {
-        title: "Cumplimiento Legal",
-        content: "Operamos en cumplimiento con todas las leyes y regulaciones aplicables incluyendo códigos de construcción, regulaciones de seguridad y requisitos de licencias. Todo el trabajo es realizado por profesionales licenciados y asegurados."
       },
       disputes: {
         title: "Resolución de Disputas",
@@ -204,22 +252,22 @@ const translations = {
         items: [
           "Comunicación directa y negociación de buena fe",
           "Mediación a través de un mediador mutuamente acordado si es necesario",
-          "Arbitraje o litigio en las cortes del Condado de Dallas, Texas",
-          "La ley del estado de Texas gobierna estos términos y cualquier disputa"
+          "Arbitraje bajo las reglas de arbitraje comercial colombianas",
+          "La ley colombiana gobierna estos términos y cualquier disputa"
         ]
       },
       modifications: {
         title: "Modificaciones a los Términos",
-        content: "Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios serán publicados en nuestro sitio web y tomarán efecto inmediatamente para nuevos contratos. Los contratos existentes permanecen sujetos a los términos en efecto al momento de la firma."
+        content: "Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios se publicarán en nuestro sitio web y se notificará a los usuarios por correo electrónico. El uso continuado de los servicios después de los cambios constituye aceptación de los términos modificados."
       },
       contact: {
         title: "Información de Contacto",
         content: "Para preguntas sobre estos Términos de Servicio o nuestros servicios, contáctanos:",
         contactInfo: [
-          "Email: info@xroofingandsolar.com",
-          "Teléfono: (682) 376-2497",
-          "Dirección: 940 N Belt Line Rd Suite 121 Irving, TX 75061",
-          "Horario de Atención: Lunes-Viernes 10:00 AM - 4:00 PM"
+          "Email: legal@scoutia.com",
+          "Teléfono: +57 316 5031355",
+          "Dirección: Pasto, Nariño, Colombia",
+          "WhatsApp: https://wa.me/573165031355"
         ]
       }
     }
@@ -234,11 +282,8 @@ export default function TermsOfServicePage() {
   const heroRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLElement>(null)
   
-  // Fallback para el idioma
-  const currentLang = language || 'en'
-  const t = translations[currentLang] || translations.en
-  
-  console.log('Terms - Current language:', currentLang) // Debug
+  const currentLang = language || 'es'
+  const t = translations[currentLang] || translations.es
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -327,34 +372,45 @@ export default function TermsOfServicePage() {
                   </ul>
                 </div>
 
-                {/* Warranties */}
+                {/* AI Accuracy */}
                 <div className="mb-12">
-                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.warranties.title}</h2>
-                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.warranties.content}</p>
+                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.accuracy.title}</h2>
+                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.accuracy.content}</p>
                   <ul className="space-y-2">
-                    {t.sections.warranties.items.map((item, index) => (
+                    {t.sections.accuracy.items.map((item, index) => (
                       <li key={index} className="text-gray-300 leading-relaxed">• {item}</li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Limitations */}
+                {/* Data Usage */}
                 <div className="mb-12">
-                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.limitations.title}</h2>
-                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.limitations.content}</p>
+                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.dataUsage.title}</h2>
+                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.dataUsage.content}</p>
                   <ul className="space-y-2">
-                    {t.sections.limitations.items.map((item, index) => (
+                    {t.sections.dataUsage.items.map((item, index) => (
                       <li key={index} className="text-gray-300 leading-relaxed">• {item}</li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Customer Responsibilities */}
+                {/* User Responsibilities */}
                 <div className="mb-12">
-                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.customerResponsibilities.title}</h2>
-                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.customerResponsibilities.content}</p>
+                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.userResponsibilities.title}</h2>
+                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.userResponsibilities.content}</p>
                   <ul className="space-y-2">
-                    {t.sections.customerResponsibilities.items.map((item, index) => (
+                    {t.sections.userResponsibilities.items.map((item, index) => (
+                      <li key={index} className="text-gray-300 leading-relaxed">• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Recruiter Responsibilities */}
+                <div className="mb-12">
+                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.recruiterResponsibilities.title}</h2>
+                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.recruiterResponsibilities.content}</p>
+                  <ul className="space-y-2">
+                    {t.sections.recruiterResponsibilities.items.map((item, index) => (
                       <li key={index} className="text-gray-300 leading-relaxed">• {item}</li>
                     ))}
                   </ul>
@@ -381,6 +437,17 @@ export default function TermsOfServicePage() {
                 <div className="mb-12">
                   <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.compliance.title}</h2>
                   <p className="text-gray-300 leading-relaxed">{t.sections.compliance.content}</p>
+                </div>
+
+                {/* Limitations */}
+                <div className="mb-12">
+                  <h2 className="text-2xl font-bold text-red-500 mb-4">{t.sections.limitations.title}</h2>
+                  <p className="text-gray-300 leading-relaxed mb-4">{t.sections.limitations.content}</p>
+                  <ul className="space-y-2">
+                    {t.sections.limitations.items.map((item, index) => (
+                      <li key={index} className="text-gray-300 leading-relaxed">• {item}</li>
+                    ))}
+                  </ul>
                 </div>
 
                 {/* Dispute Resolution */}

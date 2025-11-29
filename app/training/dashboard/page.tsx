@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/training/auth-guard"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { LogOut, Briefcase, MapPin, Building, DollarSign, Calendar, Loader2 } from "lucide-react"
+import { LogOut, Briefcase, MapPin, Building, DollarSign, Calendar, Loader2, Target, Award } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -96,8 +96,11 @@ function DashboardContent() {
           <h1 className="text-5xl font-bold text-white mb-4">
             Bienvenido, {user?.full_name}
           </h1>
-          <p className="text-xl text-gray-300">
-            Encuentra tu próxima oportunidad profesional
+          <p className="text-xl text-gray-300 mb-2">
+            Practica o toma el examen para las siguientes vacantes
+          </p>
+          <p className="text-sm text-gray-400">
+            Las entrevistas se personalizan según tu CV y los requisitos de cada puesto
           </p>
         </div>
 
@@ -133,8 +136,7 @@ function DashboardContent() {
               {jobPostings.map((job) => (
                 <Card 
                   key={job.id} 
-                  className="bg-gray-900 border-gray-800 hover:border-red-500 transition-all cursor-pointer group"
-                  onClick={() => router.push(`/training/jobs/${job.id}`)}
+                  className="bg-gray-900 border-gray-800 hover:border-red-500 transition-all group"
                 >
                   <CardHeader>
                     <CardTitle className="text-white group-hover:text-red-500 transition-colors">
@@ -162,15 +164,29 @@ function DashboardContent() {
                       Publicado: {new Date(job.created_at).toLocaleDateString()}
                     </div>
 
-                    <Button 
-                      className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/training/jobs/${job.id}`)
-                      }}
-                    >
-                      Ver Detalles
-                    </Button>
+                    {/* 🆕 BOTONES DE PRÁCTICA Y EXAMEN */}
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/training/practice/${job.id}`)
+                        }}
+                      >
+                        <Target className="h-4 w-4 mr-1" />
+                        Practicar
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/training/exam/${job.id}`)
+                        }}
+                      >
+                        <Award className="h-4 w-4 mr-1" />
+                        Examen
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}

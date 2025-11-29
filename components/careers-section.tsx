@@ -15,14 +15,99 @@ import {
   Sparkles,
   X,
   TrendingUp,
-  Clock,
   Shield
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useLanguage } from "@/contexts/language-context"
+
+// 🌐 TRADUCCIONES (UI solamente, NO los datos enviados)
+const translations = {
+  en: {
+    badge: "Join Our Team",
+    title: "Boost Your Career with",
+    titleHighlight: "AI",
+    subtitle: "Upload your CV and our AI will analyze your profile to find the best opportunities. Get a personalized evaluation in minutes.",
+    successTitle: "Application Successful! 🎉",
+    yourScore: "Your Overall Score:",
+    bestMatch: "Best Match:",
+    compatibility: "compatibility",
+    compatibilityByJob: "Compatibility by Position:",
+    cvReceived: "✅ Your CV has been received and analyzed. Human Resources will review your profile soon and contact you via email.",
+    nameLabel: "Full Name",
+    emailLabel: "Email",
+    phoneLabel: "Phone",
+    phoneOptional: "(Optional)",
+    cvLabel: "Curriculum Vitae (CV)",
+    clickToUpload: "Click to upload your CV",
+    fileFormats: "PDF, DOC, DOCX or TXT (max. 5MB)",
+    changeFile: "Change file",
+    coverLetterLabel: "Cover Letter",
+    coverLetterOptional: "(Optional)",
+    coverLetterPlaceholder: "Tell us why you want to join our team...",
+    submitButton: "Submit Application",
+    submitting: "Analyzing your CV with AI...",
+    privacyNote: "By submitting your CV, you agree that our AI will analyze your profile to find the best job opportunities.",
+    aiEvaluation: "AI Evaluation",
+    aiEvaluationDesc: "Automatic CV analysis using Claude Sonnet",
+    fastResponse: "Fast Response",
+    fastResponseDesc: "Receive feedback in minutes, not days",
+    antiSpam: "Anti-Spam Protection",
+    antiSpamDesc: "30-second rate limiting between submissions",
+    errorComplete: "Please complete all required fields and upload your CV",
+    errorWait: "⏱️ Please wait {seconds} seconds before submitting another application",
+    errorInvalidFile: "Please upload a PDF, DOC, DOCX or TXT file",
+    errorFileSize: "File must be smaller than 5MB",
+    errorSubmit: "Error submitting your application. Please try again.",
+    errorConnection: "Connection error. Please try again.",
+  },
+  es: {
+    badge: "Únete a Nuestro Equipo",
+    title: "Impulsa Tu Carrera con",
+    titleHighlight: "IA",
+    subtitle: "Sube tu CV y nuestra IA analizará tu perfil para encontrar las mejores oportunidades. Recibe una evaluación personalizada en minutos.",
+    successTitle: "¡Postulación Exitosa! 🎉",
+    yourScore: "Tu Puntuación General:",
+    bestMatch: "Mejor Match:",
+    compatibility: "de compatibilidad",
+    compatibilityByJob: "Compatibilidad por Vacante:",
+    cvReceived: "✅ Tu CV ha sido recibido y analizado. Recursos Humanos revisará tu perfil pronto y te contactaremos por email.",
+    nameLabel: "Nombre Completo",
+    emailLabel: "Email",
+    phoneLabel: "Teléfono",
+    phoneOptional: "(Opcional)",
+    cvLabel: "Curriculum Vitae (CV)",
+    clickToUpload: "Haz clic para subir tu CV",
+    fileFormats: "PDF, DOC, DOCX o TXT (máx. 5MB)",
+    changeFile: "Cambiar archivo",
+    coverLetterLabel: "Carta de Presentación",
+    coverLetterOptional: "(Opcional)",
+    coverLetterPlaceholder: "Cuéntanos por qué quieres unirte a nuestro equipo...",
+    submitButton: "Enviar Postulación",
+    submitting: "Analizando tu CV con IA...",
+    privacyNote: "Al enviar tu CV, aceptas que nuestra IA analice tu perfil para encontrar las mejores oportunidades laborales.",
+    aiEvaluation: "Evaluación con IA",
+    aiEvaluationDesc: "Análisis automático de tu CV usando Claude Sonnet",
+    fastResponse: "Respuesta Rápida",
+    fastResponseDesc: "Recibe feedback en minutos, no en días",
+    antiSpam: "Protección Anti-Spam",
+    antiSpamDesc: "Rate limiting de 30 segundos entre envíos",
+    errorComplete: "Por favor completa todos los campos obligatorios y sube tu CV",
+    errorWait: "⏱️ Por favor espera {seconds} segundos antes de enviar otra postulación",
+    errorInvalidFile: "Por favor sube un archivo PDF, DOC, DOCX o TXT",
+    errorFileSize: "El archivo debe ser menor a 5MB",
+    errorSubmit: "Error al enviar tu postulación. Intenta de nuevo.",
+    errorConnection: "Error de conexión. Por favor intenta de nuevo.",
+  },
+}
 
 export function CareersSection() {
+  const { language } = useLanguage()
+  const t = translations[language]
+  
   const sectionRef = useRef<HTMLDivElement>(null)
   
+  // 🔥 IMPORTANTE: Los datos del formulario NO cambian con el idioma
+  // Solo cambia la UI, los datos se envían siempre en el mismo formato
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -52,12 +137,12 @@ export function CareersSection() {
       ]
       
       if (!validTypes.includes(file.type)) {
-        setError('Por favor sube un archivo PDF, DOC, DOCX o TXT')
+        setError(t.errorInvalidFile)
         return
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        setError('El archivo debe ser menor a 5MB')
+        setError(t.errorFileSize)
         return
       }
 
@@ -73,7 +158,7 @@ export function CareersSection() {
     setSuccessData(null)
 
     if (!formData.fullName || !formData.email || !cvFile) {
-      setError('Por favor completa todos los campos obligatorios y sube tu CV')
+      setError(t.errorComplete)
       return
     }
 
@@ -82,7 +167,7 @@ export function CareersSection() {
     const timeSinceLastSubmit = now - lastSubmitTime
     if (timeSinceLastSubmit < 30000) {
       const waitTime = Math.ceil((30000 - timeSinceLastSubmit) / 1000)
-      setError(`⏱️ Por favor espera ${waitTime} segundos antes de enviar otra postulación`)
+      setError(t.errorWait.replace('{seconds}', waitTime.toString()))
       return
     }
 
@@ -91,6 +176,7 @@ export function CareersSection() {
     try {
       console.log('[CAREERS] Submitting application...')
 
+      // 🔥 DATOS ENVIADOS: Siempre en el mismo formato (NO cambian con idioma)
       const formDataToSend = new FormData()
       formDataToSend.append('full_name', formData.fullName)
       formDataToSend.append('email', formData.email)
@@ -106,7 +192,7 @@ export function CareersSection() {
       const data = await response.json()
 
       if (response.ok) {
-        setLastSubmitTime(now) // ✅ Actualizar último envío
+        setLastSubmitTime(now)
         setSuccess(true)
         setSuccessData({
           fitScore: data.fit_score || 0,
@@ -126,7 +212,7 @@ export function CareersSection() {
           fileInputRef.current.value = ''
         }
 
-        // ✅ Scroll suave al mensaje de éxito (NO al inicio)
+        // Scroll suave al mensaje de éxito
         setTimeout(() => {
           const successElement = document.getElementById('success-message')
           if (successElement) {
@@ -138,11 +224,11 @@ export function CareersSection() {
         }, 100)
 
       } else {
-        setError(data.error || 'Error al enviar tu postulación. Intenta de nuevo.')
+        setError(data.error || t.errorSubmit)
       }
     } catch (err) {
       console.error('[CAREERS] Error:', err)
-      setError('Error de conexión. Por favor intenta de nuevo.')
+      setError(t.errorConnection)
     } finally {
       setUploading(false)
     }
@@ -168,19 +254,18 @@ export function CareersSection() {
         >
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full mb-6">
             <Sparkles className="h-4 w-4 text-red-400" />
-            <span className="text-red-400 text-sm font-medium">Únete a Nuestro Equipo</span>
+            <span className="text-red-400 text-sm font-medium">{t.badge}</span>
           </div>
           
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Impulsa Tu Carrera con{" "}
+            {t.title}{" "}
             <span className="bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
-              IA
+              {t.titleHighlight}
             </span>
           </h2>
           
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Sube tu CV y nuestra IA analizará tu perfil para encontrar las mejores oportunidades.
-            Recibe una evaluación personalizada en minutos.
+            {t.subtitle}
           </p>
         </motion.div>
 
@@ -200,14 +285,14 @@ export function CareersSection() {
                     <CheckCircle className="h-8 w-8 text-green-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <h3 className="text-green-400 font-bold text-xl mb-3">
-                        ¡Postulación Exitosa! 🎉
+                        {t.successTitle}
                       </h3>
                       
                       <div className="space-y-4">
                         {/* Fit Score */}
                         <div className="bg-gray-900/60 rounded-lg p-4 border border-green-500/30">
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-300 font-medium">Tu Puntuación General:</span>
+                            <span className="text-gray-300 font-medium">{t.yourScore}</span>
                             <span className={`text-3xl font-bold ${
                               successData.fitScore >= 75 ? 'text-green-400' :
                               successData.fitScore >= 60 ? 'text-yellow-400' :
@@ -223,12 +308,12 @@ export function CareersSection() {
                           <div className="bg-blue-900/40 rounded-lg p-4 border border-blue-500/30">
                             <div className="flex items-center space-x-2 mb-2">
                               <TrendingUp className="h-5 w-5 text-blue-400" />
-                              <span className="text-blue-400 font-semibold">Mejor Match:</span>
+                              <span className="text-blue-400 font-semibold">{t.bestMatch}</span>
                             </div>
                             <p className="text-white text-lg font-bold">{successData.bestMatch}</p>
                             {successData.matchPercentages[successData.bestMatch] && (
                               <p className="text-blue-300 text-sm mt-1">
-                                {successData.matchPercentages[successData.bestMatch]}% de compatibilidad
+                                {successData.matchPercentages[successData.bestMatch]}% {t.compatibility}
                               </p>
                             )}
                           </div>
@@ -237,7 +322,7 @@ export function CareersSection() {
                         {/* Match Percentages */}
                         {Object.keys(successData.matchPercentages).length > 0 && (
                           <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
-                            <p className="text-gray-300 font-semibold mb-3">Compatibilidad por Vacante:</p>
+                            <p className="text-gray-300 font-semibold mb-3">{t.compatibilityByJob}</p>
                             <div className="space-y-2">
                               {Object.entries(successData.matchPercentages)
                                 .sort(([, a], [, b]) => b - a)
@@ -266,7 +351,7 @@ export function CareersSection() {
                         )}
 
                         <p className="text-green-300 text-sm">
-                          ✅ Tu CV ha sido recibido y analizado. Recursos Humanos revisará tu perfil pronto y te contactaremos por email.
+                          {t.cvReceived}
                         </p>
                       </div>
                     </div>
@@ -304,16 +389,14 @@ export function CareersSection() {
                   </div>
                 )}
 
-                {/* 🔒 Indicador de protección anti-spam */}
-
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="text-gray-300">
-                    Nombre Completo *
+                    {t.nameLabel} *
                   </Label>
                   <Input
                     id="fullName"
                     type="text"
-                    placeholder="Juan Pérez"
+                    placeholder={language === 'en' ? 'John Doe' : 'Juan Pérez'}
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
@@ -324,12 +407,12 @@ export function CareersSection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">
-                      Email *
+                      {t.emailLabel} *
                     </Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="tu@email.com"
+                      placeholder={language === 'en' ? 'your@email.com' : 'tu@email.com'}
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
@@ -339,7 +422,7 @@ export function CareersSection() {
 
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-gray-300">
-                      Teléfono (Opcional)
+                      {t.phoneLabel} {t.phoneOptional}
                     </Label>
                     <Input
                       id="phone"
@@ -354,7 +437,7 @@ export function CareersSection() {
 
                 <div className="space-y-2">
                   <Label className="text-gray-300">
-                    Curriculum Vitae (CV) *
+                    {t.cvLabel} *
                   </Label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
@@ -397,7 +480,7 @@ export function CareersSection() {
                           size="sm"
                           className="border-red-500 text-red-500 hover:bg-red-500/10"
                         >
-                          Cambiar archivo
+                          {t.changeFile}
                         </Button>
                       </div>
                     ) : (
@@ -405,10 +488,10 @@ export function CareersSection() {
                         <Upload className="h-12 w-12 text-gray-500" />
                         <div>
                           <p className="text-white font-medium mb-1">
-                            Haz clic para subir tu CV
+                            {t.clickToUpload}
                           </p>
                           <p className="text-sm text-gray-400">
-                            PDF, DOC, DOCX o TXT (máx. 5MB)
+                            {t.fileFormats}
                           </p>
                         </div>
                       </div>
@@ -418,11 +501,11 @@ export function CareersSection() {
 
                 <div className="space-y-2">
                   <Label htmlFor="coverLetter" className="text-gray-300">
-                    Carta de Presentación (Opcional)
+                    {t.coverLetterLabel} {t.coverLetterOptional}
                   </Label>
                   <Textarea
                     id="coverLetter"
-                    placeholder="Cuéntanos por qué quieres unirte a nuestro equipo..."
+                    placeholder={t.coverLetterPlaceholder}
                     value={formData.coverLetter}
                     onChange={(e) => setFormData({ ...formData, coverLetter: e.target.value })}
                     className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 min-h-[120px]"
@@ -437,19 +520,18 @@ export function CareersSection() {
                   {uploading ? (
                     <>
                       <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      Analizando tu CV con IA...
+                      {t.submitting}
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-5 w-5 mr-2" />
-                      Enviar Postulación
+                      {t.submitButton}
                     </>
                   )}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Al enviar tu CV, aceptas que nuestra IA analice tu perfil para encontrar 
-                  las mejores oportunidades laborales.
+                  {t.privacyNote}
                 </p>
               </form>
             </CardContent>
@@ -468,9 +550,9 @@ export function CareersSection() {
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="text-white font-semibold mb-2">Evaluación con IA</h3>
+            <h3 className="text-white font-semibold mb-2">{t.aiEvaluation}</h3>
             <p className="text-gray-400 text-sm">
-              Análisis automático de tu CV usando Claude Sonnet
+              {t.aiEvaluationDesc}
             </p>
           </div>
 
@@ -478,9 +560,9 @@ export function CareersSection() {
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="text-white font-semibold mb-2">Respuesta Rápida</h3>
+            <h3 className="text-white font-semibold mb-2">{t.fastResponse}</h3>
             <p className="text-gray-400 text-sm">
-              Recibe feedback en minutos, no en días
+              {t.fastResponseDesc}
             </p>
           </div>
 
@@ -488,9 +570,9 @@ export function CareersSection() {
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="h-8 w-8 text-red-500" />
             </div>
-            <h3 className="text-white font-semibold mb-2">Protección Anti-Spam</h3>
+            <h3 className="text-white font-semibold mb-2">{t.antiSpam}</h3>
             <p className="text-gray-400 text-sm">
-              Rate limiting de 30 segundos entre envíos
+              {t.antiSpamDesc}
             </p>
           </div>
         </motion.div>

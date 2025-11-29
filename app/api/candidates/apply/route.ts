@@ -88,7 +88,7 @@ ${job.interview_guidelines}
     console.log('[AI] Sending request to Claude with PDF...')
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-sonnet',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 5000,
       temperature: 0.3,
       messages: [

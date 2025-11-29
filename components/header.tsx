@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,6 +47,13 @@ export function Header() {
     if (pathname === "/") {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const scrollToCareers = () => {
+    const element = document.getElementById("careers-section");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -117,11 +123,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link href="/agent">
-              <Button className="bg-red-500 hover:bg-red-600 text-white">
-                {t.getQuote}
-              </Button>
-            </Link>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={scrollToCareers}
+            >
+              {t.getQuote}
+            </Button>
           </div>
 
           {/* MOBILE MENU BUTTON */}
@@ -131,11 +138,7 @@ export function Header() {
             className="md:hidden hover:scale-110 transition-transform duration-300 text-black p-3"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? (
-              <X className="h-7 w-7" />
-            ) : (
-              <Menu className="h-7 w-7" />
-            )}
+            {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
           </Button>
         </div>
 
@@ -143,7 +146,6 @@ export function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-gray-200 animate-slide-in-bottom">
             <div className="px-2 pt-2 pb-3 space-y-1">
-
               {navItems.map((item, index) => (
                 <Link
                   key={item.href}
@@ -157,7 +159,6 @@ export function Header() {
               ))}
 
               <div className="flex flex-col space-y-2 px-3 py-2">
-
                 {/* LANG MOBILE */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -177,16 +178,16 @@ export function Header() {
                 </DropdownMenu>
 
                 {/* CTA MOBILE */}
-                <Link href="/agent">
-                  <Button
-                    size="sm"
-                    className="bg-red-500 hover:bg-red-600 w-full text-white"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {t.getQuote}
-                  </Button>
-                </Link>
-
+                <Button
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 w-full text-white"
+                  onClick={() => {
+                    scrollToCareers();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  {t.getQuote}
+                </Button>
               </div>
             </div>
           </div>

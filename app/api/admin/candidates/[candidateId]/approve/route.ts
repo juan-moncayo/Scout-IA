@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { sendWelcomeEmail, isEmailConfigured } from '@/lib/email'
 
 export async function POST(
   request: NextRequest,
@@ -37,7 +38,6 @@ export async function POST(
       )
     }
 
-    // ✅ Parsear candidateId directamente (Next.js 14)
     const candidateId = parseInt(params.candidateId)
 
     if (isNaN(candidateId)) {
@@ -86,7 +86,6 @@ export async function POST(
     const tempPassword = `Scout${Math.random().toString(36).substring(2, 10)}`
     const hashedPassword = await bcrypt.hash(tempPassword, 10)
 
-    // ✅ CORRECCIÓN: Usar password_hash en lugar de password
     await query(
       `INSERT INTO users (email, password_hash, full_name, role, onboarding_completed, is_active)
        VALUES (?, ?, ?, 'agent', 1, 1)`,
@@ -101,10 +100,42 @@ export async function POST(
 
     console.log('[APPROVE] Usuario creado:', candidate.email)
 
+    // 🆕 ENVIAR EMAIL DE BIENVENIDA
+    let emailSent = false
+    if (isEmailConfigured()) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` :
+                       'http://localhost:3000')
+        
+        const loginUrl = `${baseUrl}/training/login`
+
+        emailSent = await sendWelcomeEmail({
+          to: candidate.email,
+          fullName: candidate.full_name,
+          email: candidate.email,
+          tempPassword: tempPassword,
+          loginUrl: loginUrl,
+        })
+
+        if (emailSent) {
+          console.log('[APPROVE] ✅ Welcome email sent to:', candidate.email)
+        } else {
+          console.log('[APPROVE] ⚠️ Failed to send welcome email')
+        }
+      } catch (emailError) {
+        console.error('[APPROVE] Email error:', emailError)
+      }
+    } else {
+      console.log('[APPROVE] ⚠️ Email not configured, skipping email send')
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Candidate approved and user created',
-      tempPassword
+      tempPassword,
+      emailSent,
+      emailConfigured: isEmailConfigured()
     })
 
   } catch (error: any) {

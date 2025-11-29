@@ -30,7 +30,7 @@ export async function chatWithClaude(options: ChatOptions): Promise<string> {
     console.log('[CLAUDE] Enviando request con', messages.length, 'mensajes')
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-sonnet',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: maxTokens,
       temperature: temperature,
       system: systemPrompt,

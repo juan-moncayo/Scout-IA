@@ -11,14 +11,14 @@ const translations = {
     titleAccent: "for Small Businesses",
     subtitle:
       "Scout IA optimizes your hiring process with smart filtering, adaptive interviews, and candidate scoring — all automated.",
-    getQuote: "Ir al Agente",
-    viewWork: "Ver Funcionalidades",
-    qualityTitle: "Evaluación Inteligente",
-    qualityDesc: "Preguntas adaptativas según el perfil del candidato",
-    solarTitle: "Filtrado Automático",
-    solarDesc: "Procesa CVs y clasifica candidatos por habilidades",
-    experienceTitle: "Optimización Continua",
-    experienceDesc: "El sistema mejora conforme más empresas lo usan",
+    getQuote: "Go to Agent",
+    viewWork: "View Features",
+    qualityTitle: "Smart Evaluation",
+    qualityDesc: "Adaptive questions based on candidate profile",
+    solarTitle: "Automatic Filtering",
+    solarDesc: "Processes CVs and ranks candidates by skills",
+    experienceTitle: "Continuous Optimization",
+    experienceDesc: "System improves as more companies use it",
   },
   es: {
     title: "Tu Agente Inteligente de Reclutamiento",
@@ -86,6 +86,13 @@ export function HeroSection({ startAnimation = false }: HeroSectionProps) {
     }
   }, [startAnimation, isInitialized]);
 
+  const scrollToCareers = () => {
+    const element = document.getElementById("careers-section");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <section
       id="home"
@@ -137,19 +144,22 @@ export function HeroSection({ startAnimation = false }: HeroSectionProps) {
           }`}
         >
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8 sm:mb-12 px-4">
+            {/* Ir al Agente */}
             <Button
               size="lg"
               className="button-hover bg-accent text-accent-foreground hover:bg-accent/90 group w-full sm:w-auto"
-              onClick={() => (window.location.href = "/agente")}
+              onClick={scrollToCareers}
             >
               {t.getQuote}
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
+
+            {/* Ver Funcionalidades */}
             <Button
               size="lg"
               variant="outline"
               className="button-hover border-2 border-white text-white hover:bg-white hover:text-black bg-transparent w-full sm:w-auto"
-              onClick={() => (window.location.href = "/funcionalidades")}
+              onClick={() => (window.location.href = "/services")}
             >
               {t.viewWork}
             </Button>

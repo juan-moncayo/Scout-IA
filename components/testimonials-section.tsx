@@ -11,26 +11,25 @@ export function TestimonialsSection() {
 
   const translations = {
     en: {
-      title: "What Our Customers Say",
-      subtitle: "Real feedback from satisfied homeowners",
+      title: "AI Training Highlights",
+      subtitle: "Snapshots of AI learning and improvements",
       testimonials: [
-        { id: 1, name: "Sarah Johnson", location: "Dallas, TX", rating: 5, text: "Excellent work! The team was professional, punctual, and the quality exceeded our expectations. Our new roof looks amazing!" },
-        { id: 2, name: "Mike Rodriguez", location: "Fort Worth, TX", rating: 5, text: "Great experience from start to finish. They handled our insurance claim and completed the work quickly. Highly recommend!" },
-        { id: 3, name: "Jennifer Smith", location: "Plano, TX", rating: 5, text: "The solar installation was seamless. Our energy bills have dropped significantly. Professional team and great service!" },
+        { id: 1, name: "Scout IA", location: "Platform", rating: 5, text: "Successfully evaluated 500+ candidate profiles, improving matching accuracy by 35%." },
+        { id: 2, name: "RecruitBot", location: "Platform", rating: 5, text: "Adaptive interview questions reduced average candidate time by 20%, streamlining the hiring process." },
+        { id: 3, name: "TalentScout AI", location: "Platform", rating: 5, text: "Automated CV classification achieved 92% precision in skill tagging across diverse industries." },
       ],
     },
     es: {
-      title: "Lo Que Dicen Nuestros Clientes",
-      subtitle: "Comentarios reales de propietarios satisfechos",
+      title: "Resultados de Entrenamiento de IA",
+      subtitle: "Vistazos al aprendizaje y mejoras de la IA",
       testimonials: [
-        { id: 1, name: "Sarah Johnson", location: "Dallas, TX", rating: 5, text: "¡Excelente trabajo! El equipo fue profesional, puntual, y la calidad superó nuestras expectativas. ¡Nuestro nuevo techo se ve increíble!" },
-        { id: 2, name: "Mike Rodriguez", location: "Fort Worth, TX", rating: 5, text: "Gran experiencia de principio a fin. Manejaron nuestro reclamo de seguro y completaron el trabajo rápidamente. ¡Altamente recomendado!" },
-        { id: 3, name: "Jennifer Smith", location: "Plano, TX", rating: 5, text: "La instalación solar fue perfecta. Nuestras facturas de energía han bajado significativamente. ¡Equipo profesional y gran servicio!" },
+        { id: 1, name: "Scout IA", location: "Plataforma", rating: 5, text: "Evaluó con éxito más de 500 perfiles de candidatos, mejorando la precisión en coincidencias en un 35%." },
+        { id: 2, name: "RecruitBot", location: "Plataforma", rating: 5, text: "Las preguntas adaptativas redujeron el tiempo promedio del candidato en un 20%, agilizando el proceso de selección." },
+        { id: 3, name: "TalentScout AI", location: "Plataforma", rating: 5, text: "La clasificación automática de CV alcanzó un 92% de precisión en el etiquetado de habilidades en diversas industrias." },
       ],
     },
   };
 
-  // 🔹 Fallback seguro
   const t = translations[language] || translations.es;
 
   useEffect(() => {

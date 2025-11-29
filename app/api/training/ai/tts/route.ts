@@ -2,34 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { TextToSpeechClient } from '@google-cloud/text-to-speech'
 
-// 🆕 Importar la función de limpieza
+// 🆕 Función mejorada de limpieza para evitar caracteres que causan error
 function cleanTextForTTS(text: string): string {
   let cleaned = text
 
-  // 1. Remover URLs completas
+  // 1. Remover URLs
   cleaned = cleaned.replace(/https?:\/\/[^\s]+/g, '')
 
   // 2. Remover tags HTML/XML
   cleaned = cleaned.replace(/<[^>]*>/g, ' ')
 
-  // 3. Remover markdown bold/italic (**texto**, *texto*)
+  // 3. Remover markdown bold/italic
   cleaned = cleaned.replace(/\*\*([^\*]+)\*\*/g, '$1')
   cleaned = cleaned.replace(/\*([^\*]+)\*/g, '$1')
 
-  // 4. Remover símbolos comunes que no deben leerse
-  cleaned = cleaned.replace(/[-_•→←↑↓]/g, ' ') // Guiones, bullets, flechas
-  cleaned = cleaned.replace(/[#@$%^&]/g, '') // Símbolos especiales
+  // 4. Remover símbolos problemáticos
+  cleaned = cleaned.replace(/[-_•→←↑↓]/g, ' ')
+  cleaned = cleaned.replace(/[#@$%^&]/g, '')
   
-  // 5. Remover números de lista al inicio de línea (ej: "1. ", "2. ")
+  // 5. Remover números de lista
   cleaned = cleaned.replace(/^\d+\.\s+/gm, '')
 
   // 6. Remover emojis
   cleaned = cleaned.replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
 
-  // 7. Limpiar múltiples espacios y saltos de línea
+  // 7. 🔥 IMPORTANTE: Remover caracteres unicode especiales que causan error
+  cleaned = cleaned.replace(/[━═─]/g, '-')  // Líneas especiales
+  cleaned = cleaned.replace(/[┌┐└┘├┤│]/g, ' ')  // Bordes de caja
+  
+  // 8. Limpiar múltiples espacios
   cleaned = cleaned.replace(/\s+/g, ' ')
 
-  // 8. Remover espacios al inicio y final
+  // 9. Trim
   cleaned = cleaned.trim()
 
   return cleaned
@@ -76,24 +80,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
     }
 
-    // 🆕 LIMPIAR TEXTO ANTES DE ENVIARLO AL TTS
+    console.log('[TTS] ========== STARTING TTS ==========')
+    console.log('[TTS] Original text length:', text.length)
+    console.log('[TTS] Original text (first 150 chars):', text.substring(0, 150))
+
+    // 🔥 LIMPIAR TEXTO
     const cleanedText = cleanTextForTTS(text)
     
+    console.log('[TTS] Cleaned text length:', cleanedText.length)
+    console.log('[TTS] Cleaned text (first 150 chars):', cleanedText.substring(0, 150))
+    
+    if (cleanedText.length === 0) {
+      console.error('[TTS] ❌ Text is empty after cleaning!')
+      return NextResponse.json({ error: 'Text is empty after cleaning' }, { status: 400 })
+    }
+    
     if (cleanedText.length > 5000) {
+      console.error('[TTS] ❌ Text too long:', cleanedText.length)
       return NextResponse.json({ error: 'Text too long. Max 5000 characters.' }, { status: 400 })
     }
 
-    console.log('[TTS] Generating speech...')
-    console.log('[TTS] Original length:', text.length, 'Cleaned length:', cleanedText.length)
-
+    console.log('[TTS] Creating TTS client...')
     const client = getTTSClient()
     
+    console.log('[TTS] Calling Google Cloud TTS API...')
+    console.log('[TTS] Voice: es-US-Neural2-A (Spanish)')
+    
+    // 🔥 LLAMADA A GOOGLE TTS
     const [response] = await client.synthesizeSpeech({
       input: { text: cleanedText }, 
       voice: {
-        languageCode: 'es-US',
-        name: 'es-US-Neural2-A', 
-        ssmlGender: 'MALE',
+        languageCode: 'es-US',           // 🇪🇸 ESPAÑOL
+        name: 'es-US-Neural2-A',         // Voz neural FEMENINA
+        ssmlGender: 'FEMALE',            // 🔥 FEMALE (la voz Neural2-A es femenina)
       },
       audioConfig: {
         audioEncoding: 'MP3',
@@ -104,10 +123,16 @@ export async function POST(request: NextRequest) {
     })
 
     if (!response.audioContent) {
-      throw new Error('No audio content received')
+      console.error('[TTS] ❌ No audio content in response!')
+      throw new Error('No audio content received from Google TTS')
     }
 
     const audioBase64 = Buffer.from(response.audioContent).toString('base64')
+    const audioSize = response.audioContent.length
+    
+    console.log('[TTS] ✅ SUCCESS! Audio generated')
+    console.log('[TTS] Audio size:', audioSize, 'bytes')
+    console.log('[TTS] Base64 length:', audioBase64.length)
 
     return NextResponse.json({
       success: true,
@@ -116,7 +141,18 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('[TTS] Error:', error)
-    return NextResponse.json({ error: 'Failed to generate speech' }, { status: 500 })
+    console.error('[TTS] ========== ERROR ==========')
+    console.error('[TTS] ❌ ERROR:', error)
+    
+    if (error instanceof Error) {
+      console.error('[TTS] Error name:', error.name)
+      console.error('[TTS] Error message:', error.message)
+      console.error('[TTS] Error stack:', error.stack)
+    }
+    
+    return NextResponse.json({ 
+      error: 'Failed to generate speech',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

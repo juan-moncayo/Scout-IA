@@ -29,7 +29,10 @@ import {
   Calendar,
   Mail,
   Phone,
-  Sparkles
+  Sparkles,
+  UserCheck,
+  Award,
+  XCircle
 } from "lucide-react"
 
 interface JobPosting {
@@ -63,9 +66,23 @@ interface Candidate {
   evaluated_at: string | null
 }
 
+interface ApprovedAgent {
+  id: number
+  email: string
+  full_name: string
+  role: string
+  is_active: boolean
+  onboarding_completed: boolean
+  created_at: string
+  last_login: string | null
+  voice_exam_passed: number
+  voice_exam_date: string | null
+  voice_exam_score: number | null
+}
+
 function HRDashboardContent() {
   const { user, logout, token } = useAuth()
-  const [activeTab, setActiveTab] = useState<'postings' | 'candidates'>('postings')
+  const [activeTab, setActiveTab] = useState<'postings' | 'candidates' | 'approved-agents'>('postings')
   
   // Estados para vacantes
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([])
@@ -103,12 +120,18 @@ function HRDashboardContent() {
   const [showCandidateModal, setShowCandidateModal] = useState(false)
   const [processingCandidate, setProcessingCandidate] = useState(false)
 
+  // 🆕 Estados para agentes aprobados
+  const [approvedAgents, setApprovedAgents] = useState<ApprovedAgent[]>([])
+  const [loadingApprovedAgents, setLoadingApprovedAgents] = useState(false)
+
   // Cargar datos según tab activo
   useEffect(() => {
     if (activeTab === 'postings') {
       fetchJobPostings()
     } else if (activeTab === 'candidates') {
       fetchCandidates()
+    } else if (activeTab === 'approved-agents') {
+      fetchApprovedAgents()
     }
   }, [activeTab])
 
@@ -149,6 +172,27 @@ function HRDashboardContent() {
       console.error('Error fetching candidates:', error)
     } finally {
       setLoadingCandidates(false)
+    }
+  }
+
+  // 🆕 Fetch agentes aprobados
+  const fetchApprovedAgents = async () => {
+    setLoadingApprovedAgents(true)
+    try {
+      const response = await fetch('/api/admin/approved-agents', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setApprovedAgents(data.agents)
+      }
+    } catch (error) {
+      console.error('Error fetching approved agents:', error)
+    } finally {
+      setLoadingApprovedAgents(false)
     }
   }
 
@@ -403,6 +447,14 @@ function HRDashboardContent() {
           >
             <Users className="h-4 w-4 mr-2" />
             Revisar Candidatos
+          </Button>
+          <Button
+            variant={activeTab === 'approved-agents' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('approved-agents')}
+            className={activeTab === 'approved-agents' ? 'bg-red-500 hover:bg-red-600 text-white font-semibold' : 'border-gray-700 text-white font-semibold hover:bg-gray-800'}
+          >
+            <UserCheck className="h-4 w-4 mr-2" />
+            Agentes Aprobados
           </Button>
         </div>
 
@@ -809,6 +861,107 @@ function HRDashboardContent() {
                               <Eye className="h-4 w-4 mr-1" />
                               Ver Perfil
                             </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* 🆕 Approved Agents Tab */}
+        {activeTab === 'approved-agents' && (
+          <div className="space-y-6">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-white">Agentes Aprobados ({approvedAgents.length})</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Candidatos que han sido aprobados y convertidos en usuarios del sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingApprovedAgents ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-red-500" />
+                  </div>
+                ) : approvedAgents.length === 0 ? (
+                  <p className="text-gray-400 text-center py-8">
+                    Aún no hay agentes aprobados.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {approvedAgents.map((agent) => (
+                      <div
+                        key={agent.id}
+                        className="p-4 bg-gray-800 rounded-lg border border-gray-700 hover:border-gray-600 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h4 className="text-white font-medium text-lg">{agent.full_name}</h4>
+                              
+                              {agent.is_active ? (
+                                <span className="px-3 py-1 bg-green-500/10 text-green-500 text-xs rounded-full border border-green-500/30 font-medium">
+                                  ✓ Activo
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 bg-red-500/10 text-red-500 text-xs rounded-full border border-red-500/30 font-medium">
+                                  ✗ Inactivo
+                                </span>
+                              )}
+
+                              {agent.voice_exam_passed === 1 ? (
+                                <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs rounded-full border border-blue-500/30 font-bold flex items-center">
+                                  <Award className="h-3 w-3 mr-1" />
+                                  Examen Aprobado ({agent.voice_exam_score}%)
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 bg-yellow-500/10 text-yellow-400 text-xs rounded-full border border-yellow-500/30 font-medium flex items-center">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Pendiente de Examen
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-1 text-sm text-gray-400">
+                              <div className="flex items-center">
+                                <Mail className="h-4 w-4 mr-2" />
+                                {agent.email}
+                              </div>
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Creado: {new Date(agent.created_at).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                              {agent.last_login && (
+                                <div className="flex items-center">
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Último acceso: {new Date(agent.last_login).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </div>
+                              )}
+                              {agent.voice_exam_passed === 1 && agent.voice_exam_date && (
+                                <div className="flex items-center">
+                                  <Award className="h-4 w-4 mr-2" />
+                                  Examen aprobado: {new Date(agent.voice_exam_date).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

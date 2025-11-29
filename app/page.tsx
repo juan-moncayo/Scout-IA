@@ -4,9 +4,6 @@ import { useState } from "react";
 import { Header } from "@/components/header";
 import { HeroSection } from "@/components/hero-section";
 import { AboutSection } from "@/components/about-section";
-import { ServicesDetailSection } from "@/components/services-detail-section";
-import { ProjectsGallery } from "@/components/projects-gallery";
-import { BlogSection } from "@/components/blog-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { CareersSection } from "@/components/careers-section"; // ⭐ NUEVO
 import { ContactSection } from "@/components/contact-section";
@@ -47,15 +44,6 @@ export default function Home() {
           <HeroSection key={heroVisible ? 'visible' : 'hidden'} startAnimation={heroVisible} />
           <div className="section-black">
             <AboutSection />
-          </div>
-          <div className="section-black">
-            <ServicesDetailSection />
-          </div>
-          <div className="section-black">
-            <ProjectsGallery />
-          </div>
-          <div className="section-black">
-            <BlogSection />
           </div>
           <div className="section-black">
             <TestimonialsSection />

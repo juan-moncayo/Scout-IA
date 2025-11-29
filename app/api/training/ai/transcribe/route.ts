@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
       content: audioBuffer.toString('base64'),
     }
 
+    // 🔥 CONFIGURACIÓN ACTUALIZADA PARA ESPAÑOL
     const config = {
       encoding: 'WEBM_OPUS' as const,
       sampleRateHertz: 48000,
-      languageCode: 'en-US',
+      languageCode: 'es-US',  // 🇪🇸 CAMBIO CRÍTICO: Español en lugar de inglés
       enableAutomaticPunctuation: true,
       model: 'default',
-      // 🔥 AÑADIR TIMEOUTS MÁS GENEROSOS
       useEnhanced: true, // Mejor calidad
     }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       config: config,
     }
 
-    console.log('[TRANSCRIBE] Sending to Google Speech-to-Text... (timeout: 60s)')
+    console.log('[TRANSCRIBE] Sending to Google Speech-to-Text (ESPAÑOL)... (timeout: 60s)')
 
     // 🔥 AÑADIR TIMEOUT DE 60 SEGUNDOS
     const timeoutPromise = new Promise((_, reject) => {
@@ -120,7 +120,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    console.log('[TRANSCRIBE] Success! Transcript length:', transcription.length)
+    console.log('[TRANSCRIBE] ✅ Success! Transcript (Spanish):', transcription)
+    console.log('[TRANSCRIBE] Transcript length:', transcription.length)
 
     return NextResponse.json({
       success: true,

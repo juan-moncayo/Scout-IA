@@ -59,8 +59,17 @@ export function AboutSection() {
   }, [])
 
   return (
-    <section id="about" ref={sectionRef} className="py-20 bg-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="about"
+      ref={sectionRef}
+      className="relative py-20 bg-gradient-to-bl from-black via-red-950 to-black overflow-hidden"
+    >
+      {/* Efecto radial de fondo */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-red-500/5 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
         <div
           className={`text-center mb-16 transition-all duration-1000 ${
             isVisible ? "animate-fade-in-up opacity-100" : "opacity-0"
@@ -69,7 +78,7 @@ export function AboutSection() {
           <h2 className="font-work-sans text-3xl md:text-5xl font-bold text-white mb-6">
             {t.title}
           </h2>
-          <div className="w-24 h-1 bg-red-600 mx-auto mb-8"></div>
+          <div className="w-24 h-1 bg-red-500 mx-auto mb-8 rounded-full"></div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -79,15 +88,14 @@ export function AboutSection() {
               isVisible ? "animate-slide-in-left opacity-100" : "opacity-0"
             }`}
           >
-            <Card className="card-hover border border-gray-200 shadow-lg bg-black">
+            <Card className="card-hover border border-gray-700 shadow-xl bg-gradient-to-br from-red-950/10 via-black/20 to-black/80">
               <CardContent className="p-8">
                 <div className="flex items-center mb-6">
-                  <Target className="h-8 w-8 text-red-600 mr-3" />
+                  <Target className="h-8 w-8 text-red-500 mr-3" />
                   <h3 className="font-work-sans text-2xl font-semibold text-white">
                     {t.missionTitle}
                   </h3>
                 </div>
-
                 <p className="text-gray-300 leading-relaxed text-lg">
                   {t.missionText1}
                 </p>
@@ -105,11 +113,10 @@ export function AboutSection() {
             }`}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
               {/* Equipo experto */}
-              <Card className="card-hover text-center p-6 border border-gray-200 shadow-lg bg-black">
+              <Card className="card-hover text-center p-6 border border-gray-700 shadow-lg bg-gradient-to-br from-red-950/10 via-black/20 to-black/80">
                 <CardContent className="p-4">
-                  <Users className="h-12 w-12 text-red-600 mx-auto mb-4" />
+                  <Users className="h-12 w-12 text-red-500 mx-auto mb-4" />
                   <h4 className="font-work-sans text-xl font-semibold mb-2 text-white">
                     {t.expertTeam}
                   </h4>
@@ -118,9 +125,9 @@ export function AboutSection() {
               </Card>
 
               {/* Calidad */}
-              <Card className="card-hover text-center p-6 border border-gray-200 shadow-lg bg-black">
+              <Card className="card-hover text-center p-6 border border-gray-700 shadow-lg bg-gradient-to-br from-red-950/10 via-black/20 to-black/80">
                 <CardContent className="p-4">
-                  <Award className="h-12 w-12 text-red-600 mx-auto mb-4" />
+                  <Award className="h-12 w-12 text-red-500 mx-auto mb-4" />
                   <h4 className="font-work-sans text-xl font-semibold mb-2 text-white">
                     {t.qualityFirst}
                   </h4>
@@ -129,16 +136,15 @@ export function AboutSection() {
               </Card>
 
               {/* Fecha */}
-              <Card className="card-hover text-center p-6 border border-gray-200 shadow-lg bg-black sm:col-span-2">
+              <Card className="card-hover text-center p-6 border border-gray-700 shadow-lg bg-gradient-to-br from-red-950/10 via-black/20 to-black/80 sm:col-span-2">
                 <CardContent className="p-4">
-                  <div className="text-3xl font-bold text-red-600 mb-2">2024</div>
+                  <div className="text-3xl font-bold text-red-500 mb-2">2025</div>
                   <h4 className="font-work-sans text-xl font-semibold mb-2 text-white">
                     {t.established}
                   </h4>
                   <p className="text-gray-300">{t.establishedDesc}</p>
                 </CardContent>
               </Card>
-
             </div>
           </div>
         </div>
