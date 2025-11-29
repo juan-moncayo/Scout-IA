@@ -130,7 +130,7 @@ function HRDashboardContent() {
   const [candidateStatusFilter, setCandidateStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [candidateSortBy, setCandidateSortBy] = useState<'score' | 'date'>('score')
 
-  // Estados para agentes aprobados
+  // Estados para Candidatos Aprobados aprobados
   const [approvedAgents, setApprovedAgents] = useState<ApprovedAgent[]>([])
   const [loadingApprovedAgents, setLoadingApprovedAgents] = useState(false)
   const [agentSearch, setAgentSearch] = useState('')
@@ -432,7 +432,7 @@ function HRDashboardContent() {
     })
   }, [jobPostings, postingSearch, postingFilter])
 
-  // Filtrar agentes
+  // Filtrar Candidatos Aprobados
   const filteredAgents = useMemo(() => {
     return approvedAgents.filter(agent => {
       const matchesSearch = agent.full_name.toLowerCase().includes(agentSearch.toLowerCase()) ||
@@ -539,7 +539,7 @@ function HRDashboardContent() {
             className={`${activeTab === 'approved-agents' ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-gray-700 text-white hover:bg-gray-800'} font-semibold justify-start sm:justify-center`}
           >
             <UserCheck className="h-4 w-4 mr-2" />
-            Agentes
+            Candidatos Aprobados
           </Button>
         </div>
 
@@ -1051,7 +1051,7 @@ function HRDashboardContent() {
         {/* APPROVED AGENTS TAB - CON FILTROS */}
         {activeTab === 'approved-agents' && (
           <div className="space-y-4 sm:space-y-6">
-            {/* Filtros para agentes */}
+            {/* Filtros para Candidatos Aprobados */}
             {approvedAgents.length > 0 && (
               <Card className="bg-gray-900 border-gray-800">
                 <CardContent className="p-3 sm:p-4">
@@ -1072,7 +1072,7 @@ function HRDashboardContent() {
                         onChange={(e) => setAgentFilter(e.target.value as any)}
                         className="flex-1 px-3 py-2 bg-white border border-gray-300 text-black rounded-md text-sm"
                       >
-                        <option value="all">📋 Todos los agentes</option>
+                        <option value="all">📋 Todos los Candidatos Aprobados</option>
                         <option value="active">✅ Activos</option>
                         <option value="inactive">❌ Inactivos</option>
                         <option value="exam-passed">🏆 Examen aprobado</option>
@@ -1080,7 +1080,7 @@ function HRDashboardContent() {
                     </div>
 
                     <div className="text-xs sm:text-sm text-gray-400">
-                      Mostrando {filteredAgents.length} de {approvedAgents.length} agentes
+                      Mostrando {filteredAgents.length} de {approvedAgents.length} Candidatos Aprobados
                     </div>
                   </div>
                 </CardContent>
@@ -1089,7 +1089,7 @@ function HRDashboardContent() {
 
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader className="pb-3">
-                <CardTitle className="text-white text-lg sm:text-xl">Agentes Aprobados ({filteredAgents.length})</CardTitle>
+                <CardTitle className="text-white text-lg sm:text-xl">Candidatos Aprobados ({filteredAgents.length})</CardTitle>
                 <CardDescription className="text-gray-400 text-sm">
                   Candidatos que han sido aprobados y convertidos en usuarios del sistema.
                 </CardDescription>
@@ -1102,8 +1102,8 @@ function HRDashboardContent() {
                 ) : filteredAgents.length === 0 ? (
                   <p className="text-gray-400 text-center py-8 text-sm">
                     {agentSearch || agentFilter !== 'all' 
-                      ? 'No se encontraron agentes con los filtros actuales.' 
-                      : 'Aún no hay agentes aprobados.'}
+                      ? 'No se encontraron candidatos con los filtros actuales.' 
+                      : 'Aún no hay candidatos aprobados.'}
                   </p>
                 ) : (
                   <div className="space-y-3">
