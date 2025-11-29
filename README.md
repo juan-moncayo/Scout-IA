@@ -12,6 +12,13 @@ https://scout-ia-lemon.vercel.app
 Scout IA es una plataforma moderna que combina análisis inteligente de CVs, entrevistas por voz, dashboards administrativos y entrenamiento para reclutadores.  
 Todo impulsado con IA (Claude + Google Cloud).
 
+#Documentación Completa
+
+Toda la documentación técnica detallada del proyecto (arquitectura, diagramas, explicación interna) está disponible aquí:
+
+➡️ Documento oficial (Google Docs):
+https://docs.google.com/document/d/1AaLXc4W7dBkWBW8Ldlh1sLZUeq4cg6OY/edit?usp=sharing
+
 ---
 
 # ✅ Pasos simples para correr el proyecto
@@ -36,8 +43,6 @@ Completa tus claves (Turso, Anthropic, Google Cloud, Vercel Blob).
 🎤 4️⃣ Google Cloud STT / TTS (Speech)
 El proyecto usa:
 
-makefile
-Copiar código
 GOOGLE_CLOUD_CREDENTIALS_BASE64=
 Pasos:
 
@@ -57,8 +62,6 @@ Pegar el Base64 en .env.local
 🗄 5️⃣ Inicializar Base de Datos (Turso)
 Configurar:
 
-makefile
-Copiar código
 DATABASE_URL=
 TURSO_AUTH_TOKEN=
 Ejecutar migraciones:
@@ -70,7 +73,7 @@ Si falla:
 
 bash
 Copiar código
-curl http://localhost:3000/api/db/setup?key=dev-setup-key-2025
+curl http://localhost:3000/api/db/setup?key=dev-setup-key-2025 (comando para migrar tiene que estar corriendo el proyecto)
 ▶️ 6️⃣ Ejecutar el proyecto
 Modo desarrollo:
 
@@ -81,8 +84,7 @@ Abrir:
 👉 http://localhost:3000
 
 🔑 7️⃣ Acceso admin por defecto
-makefile
-Copiar código
+
 Email: admin@talentscout.ai
 Password: AdminScout2025!
 🧠 Stack Tecnológico
@@ -132,8 +134,6 @@ Formularios, dashboards, landing page
 
 Ubicación:
 
-bash
-Copiar código
 /app
 /components
 /public
@@ -152,8 +152,6 @@ Procesamiento de entrevistas
 
 Ubicación:
 
-bash
-Copiar código
 /app/api
 /lib
 🔹 Capa de Servicios (Integraciones externas)
@@ -169,8 +167,6 @@ Email (Nodemailer)
 
 Ubicación:
 
-bash
-Copiar código
 /lib/ai
 /lib/training
 /lib/auth.ts
@@ -187,14 +183,12 @@ Blob Storage
 
 Ubicación:
 
-bash
-Copiar código
 /lib/db.ts
 /lib/migrations.ts
 /lib/seed.ts
 📁 Sistema de Carpetas Completo
 md
-Copiar código
+
 Scout-IA/
 │
 ├── app/                     # App Router (Next.js)
@@ -238,10 +232,10 @@ Scout-IA/
 ├── .env.example             # Variables de entorno
 ├── package.json
 └── README.md
-📦 Scripts útiles
-Producción:
+
 
 bash
 Copiar código
 npm run build
 npm start
+
