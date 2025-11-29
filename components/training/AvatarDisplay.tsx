@@ -25,7 +25,7 @@ export function AvatarDisplay({ isSpeaking, token, currentText }: AvatarDisplayP
         const idleBlobUrl = URL.createObjectURL(idleBlob);
         setIdleVideoUrl(idleBlobUrl);
 
-        const speakingResponse = await fetch('/videos/Cooperative-Homeowner.mp4');
+        const speakingResponse = await fetch('/videos/avataropen.mp4');
         const speakingBlob = await speakingResponse.blob();
         const speakingBlobUrl = URL.createObjectURL(speakingBlob);
         setSpeakingVideoUrl(speakingBlobUrl);
@@ -35,7 +35,7 @@ export function AvatarDisplay({ isSpeaking, token, currentText }: AvatarDisplayP
         console.error('[AVATAR] Error loading videos:', error);
         // Fallback a rutas normales si falla
         setIdleVideoUrl('/videos/avatarstop.mp4');
-        setSpeakingVideoUrl('/videos/Cooperative-Homeowner.mp4');
+        setSpeakingVideoUrl('/videos/avataropen.mp4');
       }
     };
 

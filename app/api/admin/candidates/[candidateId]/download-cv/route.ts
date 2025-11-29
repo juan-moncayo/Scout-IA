@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
 
 export async function GET(
   request: NextRequest,
@@ -39,7 +37,7 @@ export async function GET(
 
     console.log('[DOWNLOAD-CV] Fetching candidate:', candidateId)
 
-    // Obtener candidato con cv_file_path
+    // Obtener candidato con cv_file_path (que ahora es una URL de blob)
     const candidateResult = await query(
       'SELECT full_name, cv_file_path, resume_text FROM candidates WHERE id = ?',
       [candidateId]
@@ -54,48 +52,13 @@ export async function GET(
 
     const candidate = candidateResult.rows[0]
 
-    // Si existe cv_file_path, intentar leer el archivo del disco
-    if (candidate.cv_file_path) {
-      try {
-        const filePath = join(process.cwd(), 'public', candidate.cv_file_path)
-        
-        console.log('[DOWNLOAD-CV] Reading file from:', filePath)
-        
-        const fileBuffer = await readFile(filePath)
-        
-        // Determinar tipo MIME
-        const extension = candidate.cv_file_path.split('.').pop()?.toLowerCase()
-        let contentType = 'application/octet-stream'
-        
-        if (extension === 'pdf') {
-          contentType = 'application/pdf'
-        } else if (extension === 'doc') {
-          contentType = 'application/msword'
-        } else if (extension === 'docx') {
-          contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        } else if (extension === 'txt') {
-          contentType = 'text/plain'
-        }
-
-        const fileName = `CV_${candidate.full_name.replace(/\s+/g, '_')}.${extension}`
-
-        console.log('[DOWNLOAD-CV] ✅ Sending file:', fileName)
-
-        // Retornar archivo original
-        return new NextResponse(fileBuffer, {
-          status: 200,
-          headers: {
-            'Content-Type': contentType,
-            'Content-Disposition': `attachment; filename="${fileName}"`,
-            'Content-Length': fileBuffer.length.toString(),
-          },
-        })
-      } catch (fileError) {
-        console.log('[DOWNLOAD-CV] ⚠️ File not found on disk, generating from resume_text')
-      }
+    // 🔥 SI cv_file_path ES UNA URL (blob), REDIRIGIR A ESA URL
+    if (candidate.cv_file_path && candidate.cv_file_path.startsWith('http')) {
+      console.log('[DOWNLOAD-CV] ✅ Redirecting to Blob URL:', candidate.cv_file_path)
+      return NextResponse.redirect(candidate.cv_file_path)
     }
 
-    // Fallback: Generar archivo de texto desde resume_text
+    // Fallback: Generar archivo de texto desde resume_text si no hay blob
     if (!candidate.resume_text) {
       return NextResponse.json({ 
         error: 'No CV data available for this candidate',

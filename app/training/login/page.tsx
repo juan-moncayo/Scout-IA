@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, AlertCircle, Lock, Mail } from "lucide-react"
+import { Loader2, AlertCircle, Lock, Mail, Eye, EyeOff } from "lucide-react"
 import Image from "next/image"
 
 export default function LoginPage() {
   const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -44,9 +45,9 @@ export default function LoginPage() {
             priority
           />
           <h1 className="text-2xl font-bold text-white mb-2">
-            Training Portal
+            Scout IA Portal
           </h1>
-          <p className="text-gray-400">Sign in to access your training dashboard</p>
+          <p className="text-gray-400">Sign in to access your recruitment dashboard</p>
         </div>
 
         {/* Login Card */}
@@ -78,7 +79,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@xroofing.com"
+                    placeholder="your.email@scoutia.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-red-500"
@@ -97,14 +98,27 @@ export default function LoginPage() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-red-500"
+                    className="pl-10 pr-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-red-500"
                     required
                     disabled={isLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                    disabled={isLoading}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -129,13 +143,19 @@ export default function LoginPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500">
                 Having trouble signing in?{" "}
-                <a href="mailto:Oscarxroofing@gmail.com" className="text-red-500 hover:text-red-400">
+                <a 
+                  href="https://wa.me/573165031355?text=Hola,%20necesito%20ayuda%20para%20acceder%20a%20Scout%20IA" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-red-500 hover:text-red-400"
+                >
                   Contact support
                 </a>
               </p>
             </div>
           </CardContent>
         </Card>
+
       </div>
     </div>
   )

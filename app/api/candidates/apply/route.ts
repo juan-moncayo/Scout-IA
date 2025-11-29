@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import Anthropic from '@anthropic-ai/sdk'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { stat } from 'fs/promises'
+import { put } from '@vercel/blob' // 🔥 NUEVO: Importar Vercel Blob
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
@@ -328,35 +326,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 🔥 GUARDAR ARCHIVO FÍSICO EN /public/uploads/cvs/
+    // 🔥 NUEVO: SUBIR ARCHIVO A VERCEL BLOB STORAGE
+    console.log('[APPLY] Uploading file to Vercel Blob Storage...')
+    
     const buffer = Buffer.from(await cvFile.arrayBuffer())
-    const relativeUploadDir = '/uploads/cvs'
-    const uploadDir = join(process.cwd(), 'public', relativeUploadDir)
-
-    // Crear directorio si no existe
-    try {
-      await stat(uploadDir)
-    } catch (e: any) {
-      if (e.code === 'ENOENT') {
-        await mkdir(uploadDir, { recursive: true })
-        console.log('[APPLY] Created upload directory:', uploadDir)
-      }
-    }
-
-    // Generar nombre único para el archivo
     const timestamp = Date.now()
     const randomSuffix = Math.round(Math.random() * 1e9)
     const extension = cvFile.name.split('.').pop()?.toLowerCase() || 'pdf'
     const safeFileName = fullName.replace(/[^a-zA-Z0-9]/g, '_')
-    const uniqueFileName = `${safeFileName}-${timestamp}-${randomSuffix}.${extension}`
-    const filePath = join(uploadDir, uniqueFileName)
+    const uniqueFileName = `cvs/${safeFileName}-${timestamp}-${randomSuffix}.${extension}`
 
-    // Guardar archivo en disco
-    await writeFile(filePath, buffer)
-    console.log('[APPLY] ✅ CV file saved:', uniqueFileName)
+    // 🔥 SUBIR A VERCEL BLOB
+    const blob = await put(uniqueFileName, buffer, {
+      access: 'public', // Para poder descargarlo después
+      contentType: cvFile.type,
+    })
 
-    // Path relativo para guardar en BD (sin 'public/')
-    const cvFilePath = `${relativeUploadDir}/${uniqueFileName}`
+    console.log('[APPLY] ✅ File uploaded to Blob Storage:', blob.url)
+
+    // Guardar la URL del blob en lugar de la ruta del archivo
+    const cvFilePath = blob.url
 
     // Evaluar con IA
     console.log('[APPLY] Starting AI evaluation...')
@@ -371,7 +360,7 @@ export async function POST(request: NextRequest) {
     console.log('[APPLY] Best Match:', bestMatch)
     console.log('[APPLY] Match Percentages:', matchPercentages)
 
-    // Guardar en BD con cv_file_path
+    // Guardar en BD con la URL del blob
     await query(
       `INSERT INTO candidates (
         full_name, email, phone, cv_file_path, resume_text, cover_letter,
@@ -381,7 +370,7 @@ export async function POST(request: NextRequest) {
         fullName, 
         email, 
         phone,
-        cvFilePath,  // 🔥 GUARDAR PATH DEL ARCHIVO
+        cvFilePath,  // 🔥 AHORA ES UNA URL
         `MEJOR MATCH: ${bestMatch} (${matchPercentages[bestMatch] || 0}%)\n\n${resumeText}`, 
         coverLetter, 
         evaluation, 
@@ -389,7 +378,7 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    console.log('[APPLY] ✅ Candidate saved successfully with CV file path:', cvFilePath)
+    console.log('[APPLY] ✅ Candidate saved successfully with Blob URL:', cvFilePath)
 
     return NextResponse.json({
       success: true,
