@@ -470,7 +470,7 @@ export function CareersSection() {
             </div>
             <h3 className="text-white font-semibold mb-2">Evaluación con IA</h3>
             <p className="text-gray-400 text-sm">
-              Análisis automático de tu CV usando Claude Sonnet 4
+              Análisis automático de tu CV usando Claude Sonnet
             </p>
           </div>
 

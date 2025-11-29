@@ -439,7 +439,7 @@ export function CandidateModal({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg sm:text-xl font-bold text-white">Evaluación Automática por IA</h3>
-                  <p className="text-xs sm:text-sm text-gray-300">Análisis generado por Claude Sonnet 4</p>
+                  <p className="text-xs sm:text-sm text-gray-300">Análisis generado por Claude Sonnet</p>
                 </div>
               </div>
               
