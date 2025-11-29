@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useLanguage } from "@/contexts/language-context"
+import { JobCarousel } from "@/components/JobCarousel" // 🔥 NUEVO
 
 // 🌐 TRADUCCIONES (UI solamente, NO los datos enviados)
 const translations = {
@@ -106,8 +107,6 @@ export function CareersSection() {
   
   const sectionRef = useRef<HTMLDivElement>(null)
   
-  // 🔥 IMPORTANTE: Los datos del formulario NO cambian con el idioma
-  // Solo cambia la UI, los datos se envían siempre en el mismo formato
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -162,7 +161,6 @@ export function CareersSection() {
       return
     }
 
-    // 🔒 Rate limiting simple (1 envío cada 30 segundos)
     const now = Date.now()
     const timeSinceLastSubmit = now - lastSubmitTime
     if (timeSinceLastSubmit < 30000) {
@@ -176,7 +174,6 @@ export function CareersSection() {
     try {
       console.log('[CAREERS] Submitting application...')
 
-      // 🔥 DATOS ENVIADOS: Siempre en el mismo formato (NO cambian con idioma)
       const formDataToSend = new FormData()
       formDataToSend.append('full_name', formData.fullName)
       formDataToSend.append('email', formData.email)
@@ -200,7 +197,6 @@ export function CareersSection() {
           matchPercentages: data.match_percentages || {}
         })
         
-        // Limpiar formulario
         setFormData({
           fullName: '',
           email: '',
@@ -212,7 +208,6 @@ export function CareersSection() {
           fileInputRef.current.value = ''
         }
 
-        // Scroll suave al mensaje de éxito
         setTimeout(() => {
           const successElement = document.getElementById('success-message')
           if (successElement) {
@@ -267,6 +262,16 @@ export function CareersSection() {
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
             {t.subtitle}
           </p>
+        </motion.div>
+
+        {/* 🔥 NUEVO: Job Carousel */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <JobCarousel language={language} />
         </motion.div>
 
         {/* Success Message con Resultados */}
@@ -376,7 +381,7 @@ export function CareersSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
           className="max-w-3xl mx-auto"
         >
           <Card className="bg-gray-900 border-gray-800 shadow-2xl">
@@ -543,7 +548,7 @@ export function CareersSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-5xl mx-auto"
         >
           <div className="text-center">
