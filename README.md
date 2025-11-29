@@ -17,7 +17,7 @@ Todo impulsado con IA (Claude + Google Cloud).
 Toda la documentación técnica detallada del proyecto (arquitectura, diagramas, explicación interna) está disponible aquí:
 
 ➡️ Documento oficial (Google Docs):
-https://docs.google.com/document/d/1AaLXc4W7dBkWBW8Ldlh1sLZUeq4cg6OY/edit?usp=sharing
+[https://docs.google.com/document/d/1AaLXc4W7dBkWBW8Ldlh1sLZUeq4cg6OY/edit?usp=sharing](https://docs.google.com/document/d/1mQQi9t7gmmbnmwIR-J2SQDb5HbFGDR4B/edit?usp=sharing)
 
 ---
 
@@ -238,4 +238,5 @@ bash
 Copiar código
 npm run build
 npm start
+
 
