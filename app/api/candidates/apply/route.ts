@@ -1,7 +1,13 @@
+// app/api/candidates/apply/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import Anthropic from '@anthropic-ai/sdk'
-import { put } from '@vercel/blob' // 🔥 NUEVO: Importar Vercel Blob
+import { put } from '@vercel/blob'
+import { 
+  scanFileWithVirusTotal, 
+  validateFileFormat, 
+  validateFileSize 
+} from '@/lib/virustotal'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
@@ -296,6 +302,7 @@ export async function POST(request: NextRequest) {
     console.log('[APPLY] File type:', cvFile?.type)
     console.log('[APPLY] File size:', cvFile?.size, 'bytes')
 
+    // 1️⃣ VALIDACIONES BÁSICAS
     if (!fullName || !email || !cvFile) {
       return NextResponse.json(
         { error: 'Faltan campos obligatorios' },
@@ -310,14 +317,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (cvFile.size > MAX_FILE_SIZE) {
+    // 2️⃣ CONVERTIR A BUFFER
+    const arrayBuffer = await cvFile.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // 3️⃣ VALIDAR TAMAÑO
+    if (!validateFileSize(buffer, 5)) {
       return NextResponse.json(
         { error: 'Archivo muy grande (máx 5MB)' },
         { status: 400 }
       )
     }
 
-    // Verificar email duplicado
+    // 4️⃣ VALIDAR FORMATO DEL ARCHIVO (magic bytes)
+    if (!validateFileFormat(buffer, cvFile.type)) {
+      return NextResponse.json(
+        { error: 'El archivo no es válido o está corrupto' },
+        { status: 400 }
+      )
+    }
+
+    // 5️⃣ 🔒 ESCANEAR CON VIRUSTOTAL
+    console.log('🔍 Scanning file with VirusTotal...')
+    const virusScanResult = await scanFileWithVirusTotal(buffer, cvFile.name)
+
+    if (!virusScanResult.isSafe) {
+      console.error('⛔ Malicious file detected:', virusScanResult)
+      return NextResponse.json(
+        { 
+          error: '🛡️ El archivo contiene contenido sospechoso y no puede ser procesado por seguridad',
+          details: virusScanResult.detections > 0 
+            ? `${virusScanResult.detections} detecciones en ${virusScanResult.totalScans} escáneres`
+            : 'Error en el análisis de seguridad'
+        },
+        { status: 400 }
+      )
+    }
+
+    console.log('✅ File verified as safe by VirusTotal')
+    console.log(`   - Scanners: ${virusScanResult.totalScans}`)
+    console.log(`   - Detections: ${virusScanResult.detections}`)
+    if (virusScanResult.permalink) {
+      console.log(`   - Report: ${virusScanResult.permalink}`)
+    }
+
+    // 6️⃣ VERIFICAR EMAIL DUPLICADO
     const existing = await query('SELECT id FROM candidates WHERE email = ?', [email])
     if (existing.rows.length > 0) {
       return NextResponse.json(
@@ -326,28 +370,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 🔥 NUEVO: SUBIR ARCHIVO A VERCEL BLOB STORAGE
+    // 7️⃣ SUBIR ARCHIVO A VERCEL BLOB STORAGE
     console.log('[APPLY] Uploading file to Vercel Blob Storage...')
     
-    const buffer = Buffer.from(await cvFile.arrayBuffer())
     const timestamp = Date.now()
     const randomSuffix = Math.round(Math.random() * 1e9)
     const extension = cvFile.name.split('.').pop()?.toLowerCase() || 'pdf'
     const safeFileName = fullName.replace(/[^a-zA-Z0-9]/g, '_')
     const uniqueFileName = `cvs/${safeFileName}-${timestamp}-${randomSuffix}.${extension}`
 
-    // 🔥 SUBIR A VERCEL BLOB
     const blob = await put(uniqueFileName, buffer, {
-      access: 'public', // Para poder descargarlo después
+      access: 'public',
       contentType: cvFile.type,
     })
 
     console.log('[APPLY] ✅ File uploaded to Blob Storage:', blob.url)
 
-    // Guardar la URL del blob en lugar de la ruta del archivo
     const cvFilePath = blob.url
 
-    // Evaluar con IA
+    // 8️⃣ EVALUAR CON IA
     console.log('[APPLY] Starting AI evaluation...')
     const { evaluation, fitScore, resumeText, bestMatch, matchPercentages } = await evaluateCandidateWithAI(
       cvFile,
@@ -358,9 +399,8 @@ export async function POST(request: NextRequest) {
     console.log('[APPLY] AI evaluation completed')
     console.log('[APPLY] Fit Score:', fitScore)
     console.log('[APPLY] Best Match:', bestMatch)
-    console.log('[APPLY] Match Percentages:', matchPercentages)
 
-    // Guardar en BD con la URL del blob
+    // 9️⃣ GUARDAR EN BD
     await query(
       `INSERT INTO candidates (
         full_name, email, phone, cv_file_path, resume_text, cover_letter,
@@ -370,7 +410,7 @@ export async function POST(request: NextRequest) {
         fullName, 
         email, 
         phone,
-        cvFilePath,  // 🔥 AHORA ES UNA URL
+        cvFilePath,
         `MEJOR MATCH: ${bestMatch} (${matchPercentages[bestMatch] || 0}%)\n\n${resumeText}`, 
         coverLetter, 
         evaluation, 
@@ -378,14 +418,21 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    console.log('[APPLY] ✅ Candidate saved successfully with Blob URL:', cvFilePath)
+    console.log('[APPLY] ✅ Candidate saved successfully')
 
     return NextResponse.json({
       success: true,
       message: 'Postulación recibida exitosamente',
       fit_score: fitScore,
       best_match: bestMatch,
-      match_percentages: matchPercentages
+      match_percentages: matchPercentages,
+      virus_scan: {
+        scanned: true,
+        safe: true,
+        scanners: virusScanResult.totalScans,
+        detections: virusScanResult.detections,
+        report: virusScanResult.permalink
+      }
     })
 
   } catch (error: any) {

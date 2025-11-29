@@ -1,3 +1,4 @@
+// app/training/admin/page.tsx
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CandidateModal } from "@/components/candidate-modal"
+import { useRouter } from "next/navigation"
 import { 
   LogOut, 
   Briefcase, 
@@ -36,7 +38,8 @@ import {
   Search,
   Filter,
   Menu,
-  X as CloseIcon
+  X as CloseIcon,
+  BookOpen
 } from "lucide-react"
 
 interface JobPosting {
@@ -86,6 +89,7 @@ interface ApprovedAgent {
 
 function HRDashboardContent() {
   const { user, logout, token } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'postings' | 'candidates' | 'approved-agents'>('candidates')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
@@ -518,7 +522,7 @@ function HRDashboardContent() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        {/* Navigation Tabs - BOTONES BLANCOS */}
+        {/* Navigation Tabs - BOTONES BLANCOS + KNOWLEDGE BASE */}
         <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 mb-6 sm:mb-8">
           <Button
             variant="default"
@@ -543,6 +547,15 @@ function HRDashboardContent() {
           >
             <UserCheck className="h-4 w-4 mr-2" />
             Candidatos Aprobados
+          </Button>
+          {/* 🆕 NUEVO BOTÓN KNOWLEDGE BASE */}
+          <Button
+            variant="default"
+            onClick={() => router.push('/training/admin/knowledge')}
+            className="bg-white text-black hover:bg-gray-100 font-semibold justify-start sm:justify-center"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Knowledge Base
           </Button>
         </div>
 

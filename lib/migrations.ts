@@ -18,7 +18,8 @@ export async function runMigrations() {
         created_at TEXT DEFAULT (datetime('now')),
         last_login TEXT,
         is_active INTEGER DEFAULT 1,
-        CHECK (role IN ('admin', 'recruiter'))
+        onboarding_completed INTEGER DEFAULT 0,
+        CHECK (role IN ('admin', 'agent'))
       )
     `)
     console.log('[MIGRATIONS] ✅ Table "users" created')
@@ -194,8 +195,7 @@ export async function runMigrations() {
     await db.execute(`
       CREATE TABLE IF NOT EXISTS voice_exam_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_email TEXT NOT NULL,
-        job_id INTEGER,
+        user_id INTEGER NOT NULL,
         exam_date TEXT DEFAULT (datetime('now')),
         confidence_score INTEGER,
         clarity_score INTEGER,
@@ -204,42 +204,56 @@ export async function runMigrations() {
         overall_score INTEGER,
         transcript TEXT,
         ai_feedback TEXT,
-        passed INTEGER,
+        passed INTEGER DEFAULT 0,
         CHECK (confidence_score IS NULL OR (confidence_score BETWEEN 0 AND 100)),
         CHECK (clarity_score IS NULL OR (clarity_score BETWEEN 0 AND 100)),
         CHECK (professionalism_score IS NULL OR (professionalism_score BETWEEN 0 AND 100)),
         CHECK (trust_building_score IS NULL OR (trust_building_score BETWEEN 0 AND 100)),
-        FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE SET NULL
+        CHECK (overall_score IS NULL OR (overall_score BETWEEN 0 AND 100)),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `)
     console.log('[MIGRATIONS] ✅ Table "voice_exam_sessions" created')
 
-    // 5. Tabla de configuración de avatar IA
+    // 5. 🆕 TABLA DE KNOWLEDGE BASE PARA RAG
+    console.log('[MIGRATIONS] 🔄 Creating knowledge_base table...')
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS ai_avatar_config (
+      CREATE TABLE IF NOT EXISTS knowledge_base (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        avatar_image_url TEXT NOT NULL,
-        did_presenter_id TEXT,
-        avatar_name TEXT DEFAULT 'Scout AI Assistant',
+        category TEXT NOT NULL,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        keywords TEXT NOT NULL,
+        metadata TEXT,
+        embedding TEXT,
+        is_active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now')),
-        is_active INTEGER DEFAULT 1
+        created_by INTEGER,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `)
-    console.log('[MIGRATIONS] ✅ Table "ai_avatar_config" created')
+    console.log('[MIGRATIONS] ✅ Table "knowledge_base" created')
 
     // 6. Crear índices para mejor performance
     await db.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_job_postings_active ON job_postings(is_active)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_status ON candidates(status)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email)')
     await db.execute('CREATE INDEX IF NOT EXISTS idx_candidates_fit_score ON candidates(fit_score)')
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_voice_exam_user ON voice_exam_sessions(user_email)')
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_voice_exam_job ON voice_exam_sessions(job_id)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_voice_exam_user ON voice_exam_sessions(user_id)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_voice_exam_passed ON voice_exam_sessions(passed)')
+    
+    // 🆕 Índices para knowledge_base
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge_base(category)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_knowledge_active ON knowledge_base(is_active)')
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_knowledge_keywords ON knowledge_base(keywords)')
+    
     console.log('[MIGRATIONS] ✅ Indexes created')
 
     console.log('[MIGRATIONS] ✅ Talent Scout AI database ready!')
-    console.log('[MIGRATIONS] 📊 Tables: users, job_postings, candidates, voice_exam_sessions, ai_avatar_config')
+    console.log('[MIGRATIONS] 📊 Tables: users, job_postings, candidates, voice_exam_sessions, knowledge_base')
 
   } catch (error) {
     console.error('[MIGRATIONS] ❌ Error:', error)

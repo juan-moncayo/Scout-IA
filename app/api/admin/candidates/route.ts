@@ -1,3 +1,4 @@
+// app/api/admin/candidates/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { query } from '@/lib/db'
@@ -36,22 +37,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Obtener todos los candidatos ordenados por score
+    // 🔥 MODIFICADO: JOIN con job_postings para obtener título de la vacante
     const result = await query(
       `SELECT 
-        id,
-        full_name,
-        email,
-        phone,
-        resume_text,
-        cover_letter,
-        ai_evaluation,
-        fit_score,
-        status,
-        applied_at,
-        evaluated_at
-       FROM candidates
-       ORDER BY fit_score DESC, applied_at DESC`
+        c.id,
+        c.full_name,
+        c.email,
+        c.phone,
+        c.resume_text,
+        c.cover_letter,
+        c.ai_evaluation,
+        c.fit_score,
+        c.status,
+        c.applied_at,
+        c.evaluated_at,
+        c.job_id,
+        jp.title as job_title,
+        jp.department as job_department
+       FROM candidates c
+       LEFT JOIN job_postings jp ON c.job_id = jp.id
+       ORDER BY c.fit_score DESC, c.applied_at DESC`
     )
 
     return NextResponse.json({

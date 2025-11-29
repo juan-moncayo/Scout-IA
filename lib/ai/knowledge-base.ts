@@ -1,9 +1,8 @@
 // lib/ai/knowledge-base.ts
-// Base de conocimiento para entrenamiento de reclutamiento
-// Sistema Talent Scout AI
+import { query } from '@/lib/db'
 
 export interface KnowledgeItem {
-  id: string
+  id: string | number
   category: string
   question: string
   answer: string
@@ -11,6 +10,7 @@ export interface KnowledgeItem {
   phase?: number
 }
 
+// 🔥 MANTENER DATOS ORIGINALES COMO FALLBACK (si falla la BD)
 export const recruitmentKnowledge: KnowledgeItem[] = [
   // ==========================================
   // FASE 1: Fundamentos de Reclutamiento
@@ -129,37 +129,298 @@ export const recruitmentKnowledge: KnowledgeItem[] = [
   },
 ]
 
-// Función para buscar conocimiento relevante
-export function searchKnowledge(query: string, limit: number = 3): KnowledgeItem[] {
-  const lowerQuery = query.toLowerCase()
-  
-  const scored = recruitmentKnowledge.map(item => {
-    let score = 0
-    
-    item.keywords.forEach(keyword => {
-      if (lowerQuery.includes(keyword.toLowerCase())) {
-        score += 3
-      }
-    })
-    
-    if (item.question.toLowerCase().includes(lowerQuery)) {
-      score += 2
-    }
-    
-    if (item.answer.toLowerCase().includes(lowerQuery)) {
-      score += 1
-    }
-    
-    return { item, score }
-  })
-  
-  return scored
-    .filter(s => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(s => s.item)
+// 🆕 FUNCIÓN PARA OBTENER CONOCIMIENTO DESDE BASE DE DATOS
+export async function getKnowledgeFromDB(): Promise<KnowledgeItem[]> {
+  try {
+    const result = await query(
+      'SELECT * FROM knowledge_base WHERE is_active = 1 ORDER BY category, id'
+    )
+
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      category: row.category,
+      question: row.question,
+      answer: row.answer,
+      keywords: JSON.parse(row.keywords || '[]'),
+      phase: JSON.parse(row.metadata || '{}').phase,
+    }))
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error fetching from DB:', error)
+    // 🔥 FALLBACK: Si falla la BD, usar datos hardcodeados
+    console.log('[KNOWLEDGE-BASE] Using fallback hardcoded knowledge')
+    return recruitmentKnowledge
+  }
 }
 
-export function getPhaseKnowledge(phaseNumber: number): KnowledgeItem[] {
-  return recruitmentKnowledge.filter(item => item.phase === phaseNumber)
+// 🆕 FUNCIÓN DE BÚSQUEDA MEJORADA (ahora usa BD)
+export async function searchKnowledge(query: string, limit: number = 3): Promise<KnowledgeItem[]> {
+  const lowerQuery = query.toLowerCase()
+  
+  try {
+    // 🔥 INTENTAR BUSCAR EN BD PRIMERO
+    const dbKnowledge = await getKnowledgeFromDB()
+    
+    const scored = dbKnowledge.map(item => {
+      let score = 0
+      
+      // Buscar en keywords
+      item.keywords.forEach(keyword => {
+        if (lowerQuery.includes(keyword.toLowerCase())) {
+          score += 3
+        }
+      })
+      
+      // Buscar en pregunta
+      if (item.question.toLowerCase().includes(lowerQuery)) {
+        score += 2
+      }
+      
+      // Buscar en respuesta
+      if (item.answer.toLowerCase().includes(lowerQuery)) {
+        score += 1
+      }
+      
+      return { item, score }
+    })
+    
+    return scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(s => s.item)
+      
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error in searchKnowledge:', error)
+    
+    // 🔥 FALLBACK: Usar búsqueda en array hardcodeado
+    const scored = recruitmentKnowledge.map(item => {
+      let score = 0
+      
+      item.keywords.forEach(keyword => {
+        if (lowerQuery.includes(keyword.toLowerCase())) {
+          score += 3
+        }
+      })
+      
+      if (item.question.toLowerCase().includes(lowerQuery)) {
+        score += 2
+      }
+      
+      if (item.answer.toLowerCase().includes(lowerQuery)) {
+        score += 1
+      }
+      
+      return { item, score }
+    })
+    
+    return scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(s => s.item)
+  }
+}
+
+// 🆕 OBTENER CONOCIMIENTO POR CATEGORÍA
+export async function getKnowledgeByCategory(category: string): Promise<KnowledgeItem[]> {
+  try {
+    const result = await query(
+      'SELECT * FROM knowledge_base WHERE category = ? AND is_active = 1 ORDER BY id',
+      [category]
+    )
+
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      category: row.category,
+      question: row.question,
+      answer: row.answer,
+      keywords: JSON.parse(row.keywords || '[]'),
+      phase: JSON.parse(row.metadata || '{}').phase,
+    }))
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error in getKnowledgeByCategory:', error)
+    return recruitmentKnowledge.filter(item => item.category === category)
+  }
+}
+
+// 🆕 OBTENER CONOCIMIENTO POR FASE
+export async function getPhaseKnowledge(phaseNumber: number): Promise<KnowledgeItem[]> {
+  try {
+    const allKnowledge = await getKnowledgeFromDB()
+    return allKnowledge.filter(item => item.phase === phaseNumber)
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error in getPhaseKnowledge:', error)
+    return recruitmentKnowledge.filter(item => item.phase === phaseNumber)
+  }
+}
+
+// 🆕 AGREGAR NUEVO CONOCIMIENTO (para panel admin)
+// lib/ai/knowledge-base.ts - Línea del addKnowledge
+export async function addKnowledge(data: {
+  category: string
+  question: string
+  answer: string
+  keywords: string[]
+  phase?: number
+  createdBy?: number
+}): Promise<KnowledgeItem | null> {
+  try {
+    const result = await query(
+      `INSERT INTO knowledge_base (
+        category, question, answer, keywords, metadata, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        data.category,
+        data.question,
+        data.answer,
+        JSON.stringify(data.keywords),
+        JSON.stringify({ phase: data.phase }),
+        data.createdBy || null
+      ]
+    )
+
+    // 🔥 FIX: Verificar que existe antes de usar
+    const insertedId = (result.rows[0] as any)?.id
+    
+    if (!insertedId) {
+      console.error('[KNOWLEDGE-BASE] No ID returned after insert')
+      return null
+    }
+    
+    return {
+      id: insertedId,
+      category: data.category,
+      question: data.question,
+      answer: data.answer,
+      keywords: data.keywords,
+      phase: data.phase
+    }
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error adding knowledge:', error)
+    return null
+  }
+}
+
+// 🆕 ACTUALIZAR CONOCIMIENTO
+export async function updateKnowledge(
+  id: number,
+  data: Partial<{
+    category: string
+    question: string
+    answer: string
+    keywords: string[]
+    phase?: number
+    isActive: boolean
+  }>
+): Promise<boolean> {
+  try {
+    const updates: string[] = []
+    const values: any[] = []
+
+    if (data.category !== undefined) {
+      updates.push('category = ?')
+      values.push(data.category)
+    }
+    if (data.question !== undefined) {
+      updates.push('question = ?')
+      values.push(data.question)
+    }
+    if (data.answer !== undefined) {
+      updates.push('answer = ?')
+      values.push(data.answer)
+    }
+    if (data.keywords !== undefined) {
+      updates.push('keywords = ?')
+      values.push(JSON.stringify(data.keywords))
+    }
+    if (data.phase !== undefined) {
+      updates.push('metadata = ?')
+      values.push(JSON.stringify({ phase: data.phase }))
+    }
+    if (data.isActive !== undefined) {
+      updates.push('is_active = ?')
+      values.push(data.isActive ? 1 : 0)
+    }
+
+    if (updates.length === 0) return false
+
+    updates.push("updated_at = datetime('now')")
+    values.push(id)
+
+    await query(
+      `UPDATE knowledge_base SET ${updates.join(', ')} WHERE id = ?`,
+      values
+    )
+
+    return true
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error updating knowledge:', error)
+    return false
+  }
+}
+
+// 🆕 ELIMINAR CONOCIMIENTO (soft delete)
+export async function deleteKnowledge(id: number): Promise<boolean> {
+  try {
+    await query(
+      "UPDATE knowledge_base SET is_active = 0, updated_at = datetime('now') WHERE id = ?",
+      [id]
+    )
+    return true
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error deleting knowledge:', error)
+    return false
+  }
+}
+
+// 🆕 BUSCAR CON SQL LIKE (más eficiente para BD)
+export async function searchKnowledgeAdvanced(
+  searchTerm: string,
+  options: {
+    category?: string
+    limit?: number
+    onlyActive?: boolean
+  } = {}
+): Promise<KnowledgeItem[]> {
+  try {
+    const { category, limit = 5, onlyActive = true } = options
+    
+    let sql = `
+      SELECT * FROM knowledge_base 
+      WHERE (
+        question LIKE ? OR 
+        answer LIKE ? OR 
+        keywords LIKE ?
+      )
+    `
+    
+    const searchPattern = `%${searchTerm}%`
+    const params: any[] = [searchPattern, searchPattern, searchPattern]
+    
+    if (category) {
+      sql += ' AND category = ?'
+      params.push(category)
+    }
+    
+    if (onlyActive) {
+      sql += ' AND is_active = 1'
+    }
+    
+    sql += ' ORDER BY id LIMIT ?'
+    params.push(limit)
+    
+    const result = await query(sql, params)
+    
+    return result.rows.map((row: any) => ({
+      id: row.id,
+      category: row.category,
+      question: row.question,
+      answer: row.answer,
+      keywords: JSON.parse(row.keywords || '[]'),
+      phase: JSON.parse(row.metadata || '{}').phase,
+    }))
+  } catch (error) {
+    console.error('[KNOWLEDGE-BASE] Error in searchKnowledgeAdvanced:', error)
+    return []
+  }
 }
