@@ -1,140 +1,247 @@
-✅ README listo para copiar (pegar tal cual en GitHub)
-
-Copia TODO desde aquí 👇
-
 # 🚀 Scout IA  
 Plataforma de reclutamiento inteligente con IA  
 Desarrollado con Next.js, Turso, Google Cloud y Claude AI
 
+🌐 **Demo desplegada:**  
+https://scout-ia-lemon.vercel.app
+
 ---
 
-## ✅ Pasos simples para correr el proyecto
+# 📘 Descripción General
 
-### 1️⃣ Clonar el repositorio
+Scout IA es una plataforma moderna que combina análisis inteligente de CVs, entrevistas por voz, dashboards administrativos y entrenamiento para reclutadores.  
+Todo impulsado con IA (Claude + Google Cloud).
+
+---
+
+# ✅ Pasos simples para correr el proyecto
+
+## 1️⃣ Clonar el repositorio
 ```bash
 git clone https://github.com/juan-moncayo/Scout-IA.git
 cd Scout-IA
-
 2️⃣ Instalar dependencias
+Requiere Node 18+:
 
-Requiere Node 18+
-
+bash
+Copiar código
 npm install
-
 3️⃣ Crear archivo de entorno
+bash
+Copiar código
 cp .env.example .env.local
-
-
 Completa tus claves (Turso, Anthropic, Google Cloud, Vercel Blob).
 ⚠️ El proyecto no funciona sin las variables.
 
-4️⃣ Configurar Google Cloud (STT / TTS)
+🎤 4️⃣ Google Cloud STT / TTS (Speech)
+El proyecto usa:
 
-Necesitas:
-
+makefile
+Copiar código
 GOOGLE_CLOUD_CREDENTIALS_BASE64=
-
-
 Pasos:
 
-Crea el proyecto en Google Cloud
+Crear proyecto en Google Cloud
 
-Activa Speech-to-Text y Text-to-Speech
+Activar Speech-to-Text y Text-to-Speech
 
-Crea un Service Account y descarga el JSON
+Crear Service Account → descargar JSON
 
-Convierte el JSON a Base64:
+Convertir JSON a Base64:
 
+bash
+Copiar código
 cat credenciales.json | base64
+Pegar el Base64 en .env.local
 
-
-Pégalo completo en .env.local
-
-5️⃣ Inicializar Base de Datos (Turso)
-
+🗄 5️⃣ Inicializar Base de Datos (Turso)
 Configurar:
 
+makefile
+Copiar código
 DATABASE_URL=
 TURSO_AUTH_TOKEN=
+Ejecutar migraciones:
 
-
-Ejecutar:
-
+bash
+Copiar código
 npm run db:setup
-
-
 Si falla:
 
+bash
+Copiar código
 curl http://localhost:3000/api/db/setup?key=dev-setup-key-2025
+▶️ 6️⃣ Ejecutar el proyecto
+Modo desarrollo:
 
-6️⃣ Ejecutar el proyecto
+bash
+Copiar código
 npm run dev
-
-
 Abrir:
 👉 http://localhost:3000
 
-7️⃣ Acceso admin por defecto
+🔑 7️⃣ Acceso admin por defecto
+makefile
+Copiar código
 Email: admin@talentscout.ai
 Password: AdminScout2025!
-
 🧠 Stack Tecnológico
 Frontend
-
 Next.js 15
 
 Tailwind CSS
+
+Shadcn UI
 
 Framer Motion
 
 Recharts
 
 Backend / Infra
+Turso (SQLite Cloud)
 
-Turso
+Vercel Blob Storage
 
-Vercel Blob
+Next.js API Routes
 
 JWT + bcryptjs
 
 Nodemailer
 
 IA
-
-Claude Sonnet (Anthropic)
+Claude Sonnet 4 (Anthropic)
 
 Google Cloud STT / TTS
 
 Otros
-
 Zod
 
 TypeScript
 
-📁 Estructura del Proyecto (simplificada)
+🏗 Arquitectura del Sistema (Por Capas)
+Scout IA usa una arquitectura por capas, permitiendo separar responsabilidades y mantener el código limpio.
+
+🔹 Capa de Presentación (UI)
+Todo lo que el usuario ve e interactúa:
+
+Componentes React
+
+Animaciones (Framer Motion)
+
+Formularios, dashboards, landing page
+
+Ubicación:
+
+bash
+Copiar código
 /app
-  /api
-  /auth
-  /admin
-  /candidates
-  /training
 /components
-  /ui
-  /training
-/contexts
-/lib
-  /ai
-  db.ts
 /public
+🔹 Capa de Lógica de Negocio (APIs / Controladores)
+Procesa reglas del sistema:
 
+Evaluación de CVs
+
+Gestión de candidatos
+
+Gestión de vacantes
+
+Lógica de entrenamiento
+
+Procesamiento de entrevistas
+
+Ubicación:
+
+bash
+Copiar código
+/app/api
+/lib
+🔹 Capa de Servicios (Integraciones externas)
+Se encarga de:
+
+IA (Claude)
+
+Voz (Google Cloud)
+
+Almacenamiento (Vercel Blob)
+
+Email (Nodemailer)
+
+Ubicación:
+
+bash
+Copiar código
+/lib/ai
+/lib/training
+/lib/auth.ts
+🔹 Capa de Datos (Persistencia)
+Base de datos y almacenamiento de archivos:
+
+Turso client
+
+Migraciones
+
+Seeds
+
+Blob Storage
+
+Ubicación:
+
+bash
+Copiar código
+/lib/db.ts
+/lib/migrations.ts
+/lib/seed.ts
+📁 Sistema de Carpetas Completo
+md
+Copiar código
+Scout-IA/
+│
+├── app/                     # App Router (Next.js)
+│   ├── api/                 # Endpoints backend
+│   │   ├── admin/           # Administración
+│   │   ├── agents/          # Agentes
+│   │   ├── candidates/      # Candidatos
+│   │   ├── job-postings/    # Vacantes
+│   │   ├── training/        # Entrenamientos
+│   │   ├── ai/              # STT, TTS, IA
+│   │   └── exam/            # Exámenes de voz
+│   │
+│   ├── login/               # Login agentes
+│   ├── dashboard/           # Dashboard
+│   ├── practice/[jobId]/    # Prácticas de entrevistas
+│   ├── exam/[jobId]/        # Exámenes reales
+│   └── page.tsx             # Landing page principal
+│
+├── components/              # UI reutilizable
+│   ├── ui/                  # Shadcn UI
+│   ├── training/            # Componentes del sistema de entrenamiento
+│   ├── AvatarDisplay.tsx    # Avatar con animación
+│   └── VoiceRecorder.tsx    # Grabador de voz
+│
+├── contexts/                # Contextos globales
+│   ├── auth-context.tsx
+│   └── language-context.tsx
+│
+├── lib/                     # Lógica del sistema
+│   ├── ai/                  # Anthropic + prompts
+│   ├── training/            # Lógica de entrenamiento
+│   ├── auth.ts              # JWT, bcrypt
+│   ├── db.ts                # Cliente Turso
+│   ├── migrations.ts        # Migraciones
+│   └── seed.ts              # Datos iniciales
+│
+├── public/                  # Archivos estáticos
+│   ├── videos/              # Avatar IA
+│   └── logo.png
+│
+├── .env.example             # Variables de entorno
+├── package.json
+└── README.md
 📦 Scripts útiles
-
 Producción:
 
+bash
+Copiar código
 npm run build
 npm start
-
-
-Reset DB:
-
-npm run db:setup
