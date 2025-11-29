@@ -175,10 +175,11 @@ export async function runMigrations() {
     if (tableExists.rows.length > 0) {
       console.log('[MIGRATIONS] ⚠️  Old candidates table found, migrating...')
       
-      // Verificar si fit_score ya existe
+      // Verificar columnas existentes
       const columnsResult = await db.execute(`PRAGMA table_info(candidates)`)
       const columns = columnsResult.rows.map((row: any) => row.name)
       
+      // 🔥 AGREGAR COLUMNAS FALTANTES UNA POR UNA
       if (!columns.includes('fit_score')) {
         console.log('[MIGRATIONS] 🔄 Adding fit_score column...')
         await db.execute(`ALTER TABLE candidates ADD COLUMN fit_score INTEGER DEFAULT 0`)
@@ -199,12 +200,17 @@ export async function runMigrations() {
         await db.execute(`ALTER TABLE candidates ADD COLUMN resume_text TEXT`)
       }
       
-      // Eliminar columnas viejas si existen (SQLite no soporta DROP COLUMN directamente)
-      // Tenemos que recrear la tabla
+      // 🔥 CRUCIAL: Agregar cv_file_path si no existe
+      if (!columns.includes('cv_file_path')) {
+        console.log('[MIGRATIONS] 🔄 Adding cv_file_path column...')
+        await db.execute(`ALTER TABLE candidates ADD COLUMN cv_file_path TEXT`)
+      }
+      
+      // Si hay columnas viejas que necesitamos eliminar, recrear la tabla
       if (columns.includes('job_posting_id') || columns.includes('resume_url')) {
         console.log('[MIGRATIONS] 🔄 Recreating candidates table with new schema...')
         
-        // Crear tabla temporal
+        // Crear tabla temporal con el esquema correcto
         await db.execute(`
           CREATE TABLE candidates_new (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -224,14 +230,19 @@ export async function runMigrations() {
           )
         `)
         
-        // Copiar datos existentes (si los hay)
+        // Copiar datos existentes (mapeando columnas viejas a nuevas)
         await db.execute(`
-          INSERT INTO candidates_new (id, full_name, email, phone, cover_letter, status, applied_at)
-          SELECT id, full_name, email, phone, cover_letter, status, applied_at
+          INSERT INTO candidates_new (
+            id, full_name, email, phone, cover_letter, 
+            resume_text, ai_evaluation, fit_score, status, applied_at, evaluated_at
+          )
+          SELECT 
+            id, full_name, email, phone, cover_letter,
+            COALESCE(resume_text, ''), ai_evaluation, 
+            COALESCE(fit_score, 0), status, applied_at, evaluated_at
           FROM candidates
-          WHERE 1=1
-        `).catch(() => {
-          console.log('[MIGRATIONS] ℹ️  No data to migrate from old candidates table')
+        `).catch((err) => {
+          console.log('[MIGRATIONS] ℹ️  Partial data migration:', err.message)
         })
         
         // Eliminar tabla vieja y renombrar
@@ -244,7 +255,7 @@ export async function runMigrations() {
       }
       
     } else {
-      // Crear tabla nueva desde cero
+      // Crear tabla nueva desde cero con TODAS las columnas
       console.log('[MIGRATIONS] 🔄 Creating new candidates table...')
       await db.execute(`
         CREATE TABLE candidates (
@@ -252,7 +263,7 @@ export async function runMigrations() {
           full_name TEXT NOT NULL,
           email TEXT NOT NULL,
           phone TEXT,
-          cv_file_path TEXT,  /* ← CRUCIAL: Esta columna debe existir */
+          cv_file_path TEXT,
           resume_text TEXT NOT NULL,
           cover_letter TEXT,
           ai_evaluation TEXT,
@@ -264,7 +275,19 @@ export async function runMigrations() {
           CHECK (fit_score BETWEEN 0 AND 100)
         )
       `)
-      console.log('[MIGRATIONS] ✅ New candidates table created')
+      console.log('[MIGRATIONS] ✅ New candidates table created with cv_file_path')
+    }
+
+    // 7.5. 🔥 VERIFICACIÓN FINAL: Asegurar que cv_file_path existe
+    const finalColumns = await db.execute(`PRAGMA table_info(candidates)`)
+    const finalColumnNames = finalColumns.rows.map((row: any) => row.name)
+    
+    if (!finalColumnNames.includes('cv_file_path')) {
+      console.log('[MIGRATIONS] ⚠️  cv_file_path missing, adding now...')
+      await db.execute(`ALTER TABLE candidates ADD COLUMN cv_file_path TEXT`)
+      console.log('[MIGRATIONS] ✅ cv_file_path column added')
+    } else {
+      console.log('[MIGRATIONS] ✅ cv_file_path column confirmed present')
     }
 
     // 8. Crear índices para mejor performance

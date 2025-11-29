@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import Anthropic from '@anthropic-ai/sdk'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { stat } from 'fs/promises'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
@@ -325,6 +328,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 🔥 GUARDAR ARCHIVO FÍSICO EN /public/uploads/cvs/
+    const buffer = Buffer.from(await cvFile.arrayBuffer())
+    const relativeUploadDir = '/uploads/cvs'
+    const uploadDir = join(process.cwd(), 'public', relativeUploadDir)
+
+    // Crear directorio si no existe
+    try {
+      await stat(uploadDir)
+    } catch (e: any) {
+      if (e.code === 'ENOENT') {
+        await mkdir(uploadDir, { recursive: true })
+        console.log('[APPLY] Created upload directory:', uploadDir)
+      }
+    }
+
+    // Generar nombre único para el archivo
+    const timestamp = Date.now()
+    const randomSuffix = Math.round(Math.random() * 1e9)
+    const extension = cvFile.name.split('.').pop()?.toLowerCase() || 'pdf'
+    const safeFileName = fullName.replace(/[^a-zA-Z0-9]/g, '_')
+    const uniqueFileName = `${safeFileName}-${timestamp}-${randomSuffix}.${extension}`
+    const filePath = join(uploadDir, uniqueFileName)
+
+    // Guardar archivo en disco
+    await writeFile(filePath, buffer)
+    console.log('[APPLY] ✅ CV file saved:', uniqueFileName)
+
+    // Path relativo para guardar en BD (sin 'public/')
+    const cvFilePath = `${relativeUploadDir}/${uniqueFileName}`
+
     // Evaluar con IA
     console.log('[APPLY] Starting AI evaluation...')
     const { evaluation, fitScore, resumeText, bestMatch, matchPercentages } = await evaluateCandidateWithAI(
@@ -338,16 +371,17 @@ export async function POST(request: NextRequest) {
     console.log('[APPLY] Best Match:', bestMatch)
     console.log('[APPLY] Match Percentages:', matchPercentages)
 
-    // Guardar en BD
+    // Guardar en BD con cv_file_path
     await query(
       `INSERT INTO candidates (
-        full_name, email, phone, resume_text, cover_letter,
+        full_name, email, phone, cv_file_path, resume_text, cover_letter,
         ai_evaluation, fit_score, status, evaluated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))`,
       [
         fullName, 
         email, 
-        phone, 
+        phone,
+        cvFilePath,  // 🔥 GUARDAR PATH DEL ARCHIVO
         `MEJOR MATCH: ${bestMatch} (${matchPercentages[bestMatch] || 0}%)\n\n${resumeText}`, 
         coverLetter, 
         evaluation, 
@@ -355,7 +389,7 @@ export async function POST(request: NextRequest) {
       ]
     )
 
-    console.log('[APPLY] ✅ Candidate saved successfully')
+    console.log('[APPLY] ✅ Candidate saved successfully with CV file path:', cvFilePath)
 
     return NextResponse.json({
       success: true,

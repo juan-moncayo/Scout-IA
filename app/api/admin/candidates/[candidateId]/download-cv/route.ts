@@ -31,7 +31,6 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // ✅ Parsear candidateId directamente
     const candidateId = parseInt(params.candidateId)
 
     if (isNaN(candidateId)) {
@@ -40,9 +39,9 @@ export async function GET(
 
     console.log('[DOWNLOAD-CV] Fetching candidate:', candidateId)
 
-    // Obtener candidato
+    // Obtener candidato con cv_file_path
     const candidateResult = await query(
-      'SELECT full_name, cv_file_path FROM candidates WHERE id = ?',
+      'SELECT full_name, cv_file_path, resume_text FROM candidates WHERE id = ?',
       [candidateId]
     )
 
@@ -55,47 +54,81 @@ export async function GET(
 
     const candidate = candidateResult.rows[0]
 
-    if (!candidate.cv_file_path) {
+    // Si existe cv_file_path, intentar leer el archivo del disco
+    if (candidate.cv_file_path) {
+      try {
+        const filePath = join(process.cwd(), 'public', candidate.cv_file_path)
+        
+        console.log('[DOWNLOAD-CV] Reading file from:', filePath)
+        
+        const fileBuffer = await readFile(filePath)
+        
+        // Determinar tipo MIME
+        const extension = candidate.cv_file_path.split('.').pop()?.toLowerCase()
+        let contentType = 'application/octet-stream'
+        
+        if (extension === 'pdf') {
+          contentType = 'application/pdf'
+        } else if (extension === 'doc') {
+          contentType = 'application/msword'
+        } else if (extension === 'docx') {
+          contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        } else if (extension === 'txt') {
+          contentType = 'text/plain'
+        }
+
+        const fileName = `CV_${candidate.full_name.replace(/\s+/g, '_')}.${extension}`
+
+        console.log('[DOWNLOAD-CV] ✅ Sending file:', fileName)
+
+        // Retornar archivo original
+        return new NextResponse(fileBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Disposition': `attachment; filename="${fileName}"`,
+            'Content-Length': fileBuffer.length.toString(),
+          },
+        })
+      } catch (fileError) {
+        console.log('[DOWNLOAD-CV] ⚠️ File not found on disk, generating from resume_text')
+      }
+    }
+
+    // Fallback: Generar archivo de texto desde resume_text
+    if (!candidate.resume_text) {
       return NextResponse.json({ 
-        error: 'CV file not found for this candidate',
+        error: 'No CV data available for this candidate',
         candidateId,
-        message: 'This candidate does not have a CV file uploaded'
+        message: 'This candidate does not have CV data stored'
       }, { status: 404 })
     }
 
-    // Leer archivo del disco
-    const filePath = join(process.cwd(), 'public', candidate.cv_file_path)
-    
-    console.log('[DOWNLOAD-CV] Reading file from:', filePath)
-    
-    const fileBuffer = await readFile(filePath)
-    
-    // Determinar tipo MIME
-    const extension = candidate.cv_file_path.split('.').pop()?.toLowerCase()
-    let contentType = 'application/octet-stream'
-    
-    if (extension === 'pdf') {
-      contentType = 'application/pdf'
-    } else if (extension === 'doc') {
-      contentType = 'application/msword'
-    } else if (extension === 'docx') {
-      contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    } else if (extension === 'txt') {
-      contentType = 'text/plain'
-    }
+    // Crear documento de texto simple con el CV
+    const cvContent = `
+CURRICULUM VITAE
+================
 
-    // Nombre de archivo para descarga
-    const fileName = `CV_${candidate.full_name.replace(/\s+/g, '_')}.${extension}`
+Candidato: ${candidate.full_name}
+Fecha de Generación: ${new Date().toLocaleDateString('es-ES')}
 
-    console.log('[DOWNLOAD-CV] ✅ Sending file:', fileName)
+${candidate.resume_text}
 
-    // Retornar archivo original
-    return new NextResponse(fileBuffer, {
+---
+Este documento fue generado automáticamente por Talent Scout AI
+    `.trim()
+
+    const fileName = `CV_${candidate.full_name.replace(/\s+/g, '_')}.txt`
+
+    console.log('[DOWNLOAD-CV] ✅ Generating text file:', fileName)
+
+    // Retornar como archivo de texto
+    return new NextResponse(cvContent, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': 'text/plain; charset=utf-8',
         'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Content-Length': fileBuffer.length.toString(),
+        'Content-Length': Buffer.byteLength(cvContent, 'utf8').toString(),
       },
     })
 

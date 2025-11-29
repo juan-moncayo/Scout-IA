@@ -6,7 +6,6 @@ import {
   User, 
   Mail, 
   Phone, 
-  Calendar, 
   FileText, 
   Sparkles, 
   Clock,
@@ -15,10 +14,11 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
-  Download
+  Download,
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
 import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
 
 interface Candidate {
   id: number
@@ -54,16 +54,28 @@ export function CandidateModal({
   error
 }: CandidateModalProps) {
   
-  const { token } = useAuth()
   const [localProcessing, setLocalProcessing] = useState(false)
-  
+  const [actionSuccess, setActionSuccess] = useState<{
+    type: 'approve' | 'reject' | 'delete' | 'reevaluate'
+    message: string
+  } | null>(null)
+  const [showFullEvaluation, setShowFullEvaluation] = useState(false)
+
   if (!candidate) return null
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('training_token') : null
 
   // Extraer best match si está en el resume_text
   const hasBestMatch = candidate.resume_text.includes('MEJOR MATCH:')
   const bestMatchLine = hasBestMatch 
     ? candidate.resume_text.split('\n\n')[0] 
     : null
+
+  // Para la evaluación IA con "Ver más"
+  const evaluationPreview = candidate.ai_evaluation
+    ? candidate.ai_evaluation.substring(0, 400) + '...'
+    : ''
+  const shouldShowViewMore = candidate.ai_evaluation && candidate.ai_evaluation.length > 400
 
   const handleReEvaluate = async () => {
     if (!candidate || !token) {
@@ -73,9 +85,9 @@ export function CandidateModal({
     
     if (confirm('¿Re-evaluar este candidato con IA? Esto sobrescribirá la evaluación actual.')) {
       setLocalProcessing(true)
+      setActionSuccess(null)
+      
       try {
-        console.log('[MODAL] Enviando re-evaluación...')
-        
         const response = await fetch(`/api/admin/candidates/${candidate.id}/re-evaluate`, {
           method: 'POST',
           headers: {
@@ -86,14 +98,19 @@ export function CandidateModal({
         const data = await response.json()
         
         if (response.ok) {
-          alert(`✅ Re-evaluación exitosa!\n\n🎯 Fit Score: ${data.fit_score}/100\n📊 Mejor Match: ${data.best_match}`)
-          window.location.reload()
+          setActionSuccess({
+            type: 'reevaluate',
+            message: `✅ Re-evaluación exitosa! Fit Score: ${data.fit_score}/100. Mejor Match: ${data.best_match}`
+          })
+          
+          // Recargar después de 2 segundos
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
         } else {
-          console.error('[MODAL] Error response:', data)
           alert(`❌ Error: ${data.error}`)
         }
       } catch (error: any) {
-        console.error('[MODAL] Error de red:', error)
         alert('❌ Error de red')
       } finally {
         setLocalProcessing(false)
@@ -109,6 +126,8 @@ export function CandidateModal({
     
     if (confirm(`⚠️ ¿Eliminar permanentemente a ${candidate.full_name}?\n\nEsta acción no se puede deshacer.`)) {
       setLocalProcessing(true)
+      setActionSuccess(null)
+      
       try {
         const response = await fetch(`/api/admin/candidates/${candidate.id}/delete`, {
           method: 'DELETE',
@@ -118,9 +137,15 @@ export function CandidateModal({
         })
         
         if (response.ok) {
-          alert('✅ Candidato eliminado exitosamente')
-          onClose()
-          window.location.reload()
+          setActionSuccess({
+            type: 'delete',
+            message: '✅ Candidato eliminado exitosamente. Recargando...'
+          })
+          
+          // Recargar después de 1.5 segundos
+          setTimeout(() => {
+            window.location.reload()
+          }, 1500)
         } else {
           const data = await response.json()
           alert(`❌ Error: ${data.error}`)
@@ -152,7 +177,6 @@ export function CandidateModal({
         const a = document.createElement('a')
         a.href = url
         
-        // Obtener extensión del header o usar pdf por defecto
         const contentDisposition = response.headers.get('Content-Disposition')
         const fileNameMatch = contentDisposition?.match(/filename="(.+)"/)
         const fileName = fileNameMatch ? fileNameMatch[1] : `CV_${candidate.full_name.replace(/\s+/g, '_')}.pdf`
@@ -167,8 +191,105 @@ export function CandidateModal({
         alert(`❌ Error al descargar: ${data.error}`)
       }
     } catch (error) {
-      console.error('Error descargando CV:', error)
       alert('❌ Error al descargar CV')
+    }
+  }
+
+  const handleApproveWithReload = async () => {
+    if (!candidate || !token) {
+      alert('❌ Error: No hay sesión activa')
+      return
+    }
+
+    const confirmMessage = `¿Aprobar a ${candidate.full_name} y crear su usuario?\n\nSe le dará acceso al sistema de entrenamiento.`
+    
+    if (confirm(confirmMessage)) {
+      setLocalProcessing(true)
+      setActionSuccess(null)
+      
+      try {
+        console.log('[MODAL] Sending approve request for candidate:', candidate.id)
+        
+        const response = await fetch(`/api/admin/candidates/${candidate.id}/approve`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        console.log('[MODAL] Approve response status:', response.status)
+        const data = await response.json()
+        console.log('[MODAL] Approve response data:', data)
+        
+        if (response.ok) {
+          setActionSuccess({
+            type: 'approve',
+            message: `✅ Usuario creado exitosamente! Email: ${candidate.email}. Recargando...`
+          })
+          
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
+        } else {
+          console.error('[MODAL] Approve failed:', data)
+          alert(`❌ Error al aprobar: ${data.error || 'Error desconocido'}`)
+          setLocalProcessing(false)
+        }
+      } catch (error: any) {
+        console.error('[MODAL] Network error approving:', error)
+        alert('❌ Error de red al aprobar candidato')
+        setLocalProcessing(false)
+      }
+    }
+  }
+
+  const handleRejectWithReload = async () => {
+    if (!candidate || !token) {
+      alert('❌ Error: No hay sesión activa')
+      return
+    }
+    
+    const confirmMessage = `¿Rechazar a ${candidate.full_name}?\n\nEsta acción cambiará su estado a "rechazado".`
+    
+    if (confirm(confirmMessage)) {
+      setLocalProcessing(true)
+      setActionSuccess(null)
+      
+      try {
+        console.log('[MODAL] Sending reject request for candidate:', candidate.id)
+        
+        const response = await fetch(`/api/admin/candidates/${candidate.id}/reject`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        console.log('[MODAL] Reject response status:', response.status)
+        const data = await response.json()
+        console.log('[MODAL] Reject response data:', data)
+        
+        if (response.ok) {
+          setActionSuccess({
+            type: 'reject',
+            message: '✅ Candidato rechazado exitosamente. Recargando...'
+          })
+          
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
+        } else {
+          console.error('[MODAL] Reject failed:', data)
+          alert(`❌ Error al rechazar: ${data.error || 'Error desconocido'}`)
+          setLocalProcessing(false)
+        }
+      } catch (error: any) {
+        console.error('[MODAL] Network error rejecting:', error)
+        alert('❌ Error de red al rechazar candidato')
+        setLocalProcessing(false)
+      }
     }
   }
 
@@ -197,29 +318,57 @@ export function CandidateModal({
 
         {/* Contenido con scroll */}
         <div className="flex-1 overflow-y-auto pr-2 space-y-6 py-4">
-          {error && (
+          {/* Mensaje de éxito */}
+          {actionSuccess && (
+            <div className={`border-2 rounded-lg p-4 flex items-start space-x-3 ${
+              actionSuccess.type === 'approve' ? 'bg-green-500/10 border-green-500' :
+              actionSuccess.type === 'reject' ? 'bg-red-500/10 border-red-500' :
+              actionSuccess.type === 'delete' ? 'bg-orange-500/10 border-orange-500' :
+              'bg-blue-500/10 border-blue-500'
+            }`}>
+              <CheckCircle2 className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                actionSuccess.type === 'approve' ? 'text-green-500' :
+                actionSuccess.type === 'reject' ? 'text-red-500' :
+                actionSuccess.type === 'delete' ? 'text-orange-500' :
+                'text-blue-500'
+              }`} />
+              <div className="flex-1">
+                <p className={`font-semibold ${
+                  actionSuccess.type === 'approve' ? 'text-green-400' :
+                  actionSuccess.type === 'reject' ? 'text-red-400' :
+                  actionSuccess.type === 'delete' ? 'text-orange-400' :
+                  'text-blue-400'
+                }`}>
+                  {actionSuccess.message}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  La página se recargará automáticamente...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error && !actionSuccess && (
             <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-500">{error}</p>
             </div>
           )}
 
-          {/* Fit Score + Status */}
-          <div className="flex items-center justify-center gap-6">
-            {/* Fit Score Badge */}
-            <div className={`w-32 h-32 rounded-full flex items-center justify-center ${
+          {/* Fit Score + Status - Responsive */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full flex items-center justify-center ${
               candidate.fit_score >= 75 ? 'bg-green-500/20 border-4 border-green-500' :
               candidate.fit_score >= 60 ? 'bg-yellow-500/20 border-4 border-yellow-500' :
               'bg-red-500/20 border-4 border-red-500'
             }`}>
               <div className="text-center">
-                <p className="text-5xl font-bold text-white">{candidate.fit_score}</p>
-                <p className="text-sm text-gray-300 uppercase tracking-wider">Fit Score</p>
+                <p className="text-4xl sm:text-5xl font-bold text-white">{candidate.fit_score}</p>
+                <p className="text-xs sm:text-sm text-gray-300 uppercase tracking-wider">Fit Score</p>
               </div>
             </div>
 
-            {/* Status Badge */}
-            <span className={`px-6 py-3 text-base font-semibold rounded-full ${
+            <span className={`px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold rounded-full ${
               candidate.status === 'approved' ? 'bg-green-500/20 text-green-400 border-2 border-green-500' :
               candidate.status === 'rejected' ? 'bg-red-500/20 text-red-400 border-2 border-red-500' :
               'bg-yellow-500/20 text-yellow-400 border-2 border-yellow-500'
@@ -230,16 +379,16 @@ export function CandidateModal({
             </span>
           </div>
 
-          {/* Best Match destacado */}
+          {/* Best Match destacado - Responsive */}
           {bestMatchLine && (
-            <div className="bg-gradient-to-r from-green-900/50 to-blue-900/50 border-2 border-green-500 rounded-lg p-6">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-white" />
+            <div className="bg-gradient-to-r from-green-900/50 to-blue-900/50 border-2 border-green-500 rounded-lg p-4 sm:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-3 mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Mejor Vacante para el Candidato</h3>
+                <h3 className="text-base sm:text-xl font-bold text-white">Mejor Vacante para el Candidato</h3>
               </div>
-              <pre className="text-green-300 text-lg font-semibold whitespace-pre-wrap leading-relaxed">
+              <pre className="text-green-300 text-sm sm:text-lg font-semibold whitespace-pre-wrap leading-relaxed break-words">
                 {bestMatchLine}
               </pre>
             </div>
@@ -281,23 +430,48 @@ export function CandidateModal({
             </div>
           </div>
 
-          {/* Evaluación IA */}
+          {/* Evaluación IA con Ver Más */}
           {candidate.ai_evaluation && (
-            <div className="bg-gradient-to-br from-blue-900/40 via-purple-900/40 to-pink-900/40 rounded-lg p-6 border-2 border-blue-500/30">
+            <div className="bg-gradient-to-br from-blue-900/40 via-purple-900/40 to-pink-900/40 rounded-lg p-4 sm:p-6 border-2 border-blue-500/30">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-white">Evaluación Automática por IA</h3>
-                  <p className="text-sm text-gray-300">Análisis generado por Claude Sonnet 4</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">Evaluación Automática por IA</h3>
+                  <p className="text-xs sm:text-sm text-gray-300">Análisis generado por Claude Sonnet 4</p>
                 </div>
               </div>
               
-              <div className="bg-gray-900/80 rounded-lg p-5 border border-gray-700 max-h-96 overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-gray-200 text-sm leading-relaxed font-sans">
-{candidate.ai_evaluation}
-                </pre>
+              <div className="bg-gray-900/80 rounded-lg p-3 sm:p-5 border border-gray-700">
+                <div className={`${showFullEvaluation ? '' : 'max-h-64 sm:max-h-96'} overflow-y-auto`}>
+                  <pre className="whitespace-pre-wrap text-gray-200 text-xs sm:text-sm leading-relaxed font-sans">
+{showFullEvaluation ? candidate.ai_evaluation : evaluationPreview}
+                  </pre>
+                </div>
+                
+                {shouldShowViewMore && (
+                  <button
+                    onClick={() => setShowFullEvaluation(!showFullEvaluation)}
+                    className="mt-3 w-full sm:w-auto text-sm text-blue-400 hover:text-blue-300 font-semibold flex items-center justify-center sm:justify-start space-x-1 transition-colors"
+                  >
+                    {showFullEvaluation ? (
+                      <>
+                        <span>Ver menos</span>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        <span>Ver más evaluación</span>
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
               
               {candidate.evaluated_at && (
@@ -370,10 +544,10 @@ export function CandidateModal({
           <div className="flex space-x-3">
             <Button
               onClick={handleReEvaluate}
-              disabled={processing || localProcessing}
+              disabled={processing || localProcessing || actionSuccess !== null}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3"
             >
-              {(processing || localProcessing) ? (
+              {(processing || localProcessing) && actionSuccess?.type === 'reevaluate' ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Sparkles className="h-4 w-4 mr-2" />
@@ -383,11 +557,11 @@ export function CandidateModal({
             
             <Button
               onClick={handleDelete}
-              disabled={processing || localProcessing}
+              disabled={processing || localProcessing || actionSuccess !== null}
               variant="outline"
               className="border-red-500 text-red-500 hover:bg-red-900/20 py-3"
             >
-              {(processing || localProcessing) ? (
+              {(processing || localProcessing) && actionSuccess?.type === 'delete' ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -400,11 +574,11 @@ export function CandidateModal({
           {candidate.status === 'pending' ? (
             <div className="flex space-x-3">
               <Button
-                onClick={() => onApprove(candidate.id)}
-                disabled={processing || localProcessing}
+                onClick={handleApproveWithReload}
+                disabled={processing || localProcessing || actionSuccess !== null}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-6 text-lg font-semibold"
               >
-                {(processing || localProcessing) ? (
+                {(processing || localProcessing) && actionSuccess?.type === 'approve' ? (
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 ) : (
                   <UserCheck className="h-5 w-5 mr-2" />
@@ -412,11 +586,11 @@ export function CandidateModal({
                 Aprobar y Crear Usuario
               </Button>
               <Button
-                onClick={() => onReject(candidate.id)}
-                disabled={processing || localProcessing}
+                onClick={handleRejectWithReload}
+                disabled={processing || localProcessing || actionSuccess !== null}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-6 text-lg font-semibold"
               >
-                {(processing || localProcessing) ? (
+                {(processing || localProcessing) && actionSuccess?.type === 'reject' ? (
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 ) : (
                   <UserX className="h-5 w-5 mr-2" />
@@ -425,9 +599,19 @@ export function CandidateModal({
               </Button>
             </div>
           ) : (
-            <div className="text-center py-4">
-              <p className="text-gray-400">
-                Este candidato ya fue {candidate.status === 'approved' ? 'aprobado' : 'rechazado'}
+            <div className="text-center py-4 bg-gray-800 rounded-lg border border-gray-700">
+              <p className="text-gray-300 flex items-center justify-center space-x-2">
+                {candidate.status === 'approved' ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-green-400" />
+                    <span>Este candidato ya fue <strong className="text-green-400">aprobado</strong></span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-5 w-5 text-red-400" />
+                    <span>Este candidato ya fue <strong className="text-red-400">rechazado</strong></span>
+                  </>
+                )}
               </p>
             </div>
           )}
